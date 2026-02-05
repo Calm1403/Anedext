@@ -142,8 +142,13 @@ free:
   return NULL;
 }
 
-static int
+static void
 check_maps(unsigned char input)
+{
+}
+
+static int
+process_input(unsigned char input)
 {
   node_t* node = state.key_maps;
   do
@@ -162,21 +167,12 @@ check_maps(unsigned char input)
       break;
     }
   } while ((node = node->next) != NULL);
-  return 0;
-}
 
-static int
-process_input(unsigned char input)
-{
-  if (check_maps(input) == 1)
-    return 1;
-
-  if (state.mode == 1)
+  if (node == NULL)
   {
-    // TODO: Design insertion mode.
-  }
-  else
-  {
+    if (state.mode == 1)
+    {
+    }
     state.fb->buffer[state.pos] = input;
     go_right();
   }
@@ -214,14 +210,6 @@ uninitialise_state(void)
   deallocate_fb(state.fb);
 }
 
-static void
-fair_well(void)
-{
-  uninitialise_state();
-
-  fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
-}
-
 int
 begin_processing(char* location)
 {
@@ -231,7 +219,9 @@ begin_processing(char* location)
   if (read_input(&process_input) == 1)
     return 1;
 
-  fair_well();
+  uninitialise_state();
+
+  fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
 
   return 0;
 }

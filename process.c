@@ -45,8 +45,10 @@ go_left()
       state.pos = state.fb->size - 1;
     else
       --state.pos;
+    /* Movement test; todo: itegrate actual cursor movement.
     if ((cur_char = state.fb->buffer[state.pos]) == '\n')
       puts("\x1b[1E");
+    */
   } while (cur_char == '\n');
 }
 

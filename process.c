@@ -142,39 +142,46 @@ free:
   return NULL;
 }
 
-static void
-check_maps(unsigned char input)
-{
-}
-
 static int
-process_input(unsigned char input)
+check_maps(node_t** node, unsigned int input)
 {
-  node_t* node = state.key_maps;
   do
   {
-    if (node->key == input)
+    if ((*node)->key == input)
     {
-      if (node->mapping() == 1)
+      if ((*node)->mapping() == 1)
       {
         printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
                state.fb->buffer,
                state.pos,
                modes[state.mode]);
 
-        return 1;
+        return 1; // Special input caused termination.
       }
       break;
     }
-  } while ((node = node->next) != NULL);
+  } while ((*node = (*node)->next) != NULL);
+  return 0;
+}
+
+static int
+process_input(unsigned char input)
+{
+  node_t* node = state.key_maps;
+
+  if (check_maps(&node, input) == 1)
+    return 1;
 
   if (node == NULL)
   {
     if (state.mode == 1)
     {
     }
-    state.fb->buffer[state.pos] = input;
-    go_right();
+    else
+    {
+      state.fb->buffer[state.pos] = input;
+      go_right();
+    }
   }
 
   printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",

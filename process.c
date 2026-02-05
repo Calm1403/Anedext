@@ -143,7 +143,7 @@ free:
 }
 
 static int
-process_input(unsigned char input)
+check_maps(unsigned char input)
 {
   node_t* node = state.key_maps;
   do
@@ -162,8 +162,20 @@ process_input(unsigned char input)
       break;
     }
   } while ((node = node->next) != NULL);
+  return 0;
+}
 
-  if (node == NULL)
+static int
+process_input(unsigned char input)
+{
+  if (check_maps(input) == 1)
+    return 1;
+
+  if (state.mode == 1)
+  {
+    // TODO: Design insertion mode.
+  }
+  else
   {
     state.fb->buffer[state.pos] = input;
     go_right();

@@ -214,6 +214,14 @@ uninitialise_state(void)
   deallocate_fb(state.fb);
 }
 
+static void
+fair_well(void)
+{
+  uninitialise_state();
+
+  fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
+}
+
 int
 begin_processing(char* location)
 {
@@ -223,9 +231,7 @@ begin_processing(char* location)
   if (read_input(&process_input) == 1)
     return 1;
 
-  uninitialise_state();
-
-  fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
+  fair_well();
 
   return 0;
 }

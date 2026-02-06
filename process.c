@@ -47,7 +47,7 @@ go_left()
       --state.pos;
     /* Movement test; todo: itegrate actual cursor movement.
     if ((cur_char = state.fb->buffer[state.pos]) == '\n')
-      puts("\x1b[1E");
+      // then something like 'puts("\x1b[1E");' maybe.
     */
   } while (cur_char == '\n');
 }
@@ -167,24 +167,29 @@ check_maps(node_t** node, unsigned int input)
 }
 
 static int
-process_input(unsigned char input)
+determine_special_input(unsigned char input)
 {
   node_t* node = state.key_maps;
-
   if (check_maps(&node, input) == 1)
-    return 1;
+    return 1; // Special input caused termination.
 
-  if (node == NULL)
-  {
-    if (state.mode == 1)
-    {
-    }
-    else
+  if (node == NULL) // Special input didn't cause termination.
+    return 2;
+
+  return 0; // Normal input.
+}
+
+static int
+process_input(unsigned char input)
+{
+  switch (determine_special_input(input))
+  case 1:
+
+    if (node == NULL)
     {
       state.fb->buffer[state.pos] = input;
       go_right();
     }
-  }
 
   printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
          state.fb->buffer,

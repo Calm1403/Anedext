@@ -38,7 +38,6 @@ deallocate_fb(file_buffer_t* fb)
   {
     fseek(fb->file_pointer, 0L, SEEK_SET);
     fwrite(fb->buffer, 1, fb->size, fb->file_pointer);
-    printf("\x1b[H\x1b[JSaved %li bytes to %s.\n", fb->size, fb->file_name);
   }
   free(fb->buffer);
   fclose(fb->file_pointer);

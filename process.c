@@ -56,6 +56,7 @@ go_left()
     if ((cur_char = state.fb->buffer[state.pos]) == '\n')
       // then something like 'puts("\x1b[1E");' maybe.
     */
+    cur_char = state.fb->buffer[state.pos];
   } while (cur_char == '\n');
 }
 

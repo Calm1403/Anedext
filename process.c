@@ -102,6 +102,12 @@ handle_0x1b(void)
     case 'C':
       go_right();
   }
+
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+         state.fb->buffer,
+         state.pos,
+         modes[state.mode]);
+
   return 0;
 }
 

@@ -201,7 +201,7 @@ process_input(unsigned char input)
       return 1;
 
     case SPECIAL_NT:
-      break;
+      return 0;
 
     default:
     {

@@ -31,6 +31,13 @@ typedef struct state_s
   file_buffer_t* fb;
 } state_t;
 
+enum
+{
+  SPECIAL_NT = 2, // Special input; non terminating.
+  SPECIAL_T = 1,  // Special input; terminating.
+  NORMAL = 0,     // Non special input; printable characters.
+};
+
 static state_t state = { 0, 0, NULL, NULL };
 
 static char* modes[2] = { "normal", "insert" };
@@ -72,17 +79,18 @@ handle_0x1b(void)
   char seq[2] = { 0 };
   if (read(STDIN_FILENO, seq, 2) == 0)
   {
-    printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
-           state.fb->buffer,
-           state.pos,
-           modes[state.mode]);
-
     if (state.mode == 1)
     {
       state.mode = 0;
 
+      printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+             state.fb->buffer,
+             state.pos,
+             modes[state.mode]);
+
       return 0;
     }
+    fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
     return 1;
   }
   switch (seq[1])
@@ -107,6 +115,11 @@ static int
 handle_0x09(void)
 {
   state.mode = 1;
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+         state.fb->buffer,
+         state.pos,
+         modes[state.mode]);
+
   return 0;
 }
 
@@ -115,6 +128,11 @@ handle_0x08_0x7f(void)
 {
   go_left();
   state.fb->buffer[state.pos] = ' ';
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+         state.fb->buffer,
+         state.pos,
+         modes[state.mode]);
+
   return 0;
 }
 
@@ -152,14 +170,8 @@ check_maps(node_t** node, unsigned int input)
     if ((*node)->key == input)
     {
       if ((*node)->mapping() == 1)
-      {
-        printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
-               state.fb->buffer,
-               state.pos,
-               modes[state.mode]);
+        return 1;
 
-        return 1; // Special input caused termination.
-      }
       break;
     }
   } while ((*node = (*node)->next) != NULL);
@@ -167,34 +179,39 @@ check_maps(node_t** node, unsigned int input)
 }
 
 static int
-determine_special_input(unsigned char input)
+determine_input(unsigned char input)
 {
   node_t* node = state.key_maps;
   if (check_maps(&node, input) == 1)
-    return 1; // Special input caused termination.
+    return SPECIAL_T; // Special input caused termination.
 
-  if (node == NULL) // Special input didn't cause termination.
-    return 2;
+  if (node == NULL)
+    return NORMAL; // Normal input.
 
-  return 0; // Normal input.
+  return SPECIAL_NT; // Special input didn't cause termination.
 }
 
 static int
 process_input(unsigned char input)
 {
-  switch (determine_special_input(input))
-  case 1:
+  switch (determine_input(input))
+  {
+    case SPECIAL_T:
+      return 1;
 
-    if (node == NULL)
+    case SPECIAL_NT:
+      break;
+
+    default:
     {
       state.fb->buffer[state.pos] = input;
       go_right();
+      printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+             state.fb->buffer,
+             state.pos,
+             modes[state.mode]);
     }
-
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
-         state.fb->buffer,
-         state.pos,
-         modes[state.mode]);
+  }
 
   return 0;
 }
@@ -234,8 +251,6 @@ begin_processing(char* location)
     return 1;
 
   uninitialise_state();
-
-  fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
 
   return 0;
 }

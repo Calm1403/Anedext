@@ -115,6 +115,11 @@ static int
 handle_0x13(void)
 {
   state.fb->save = true;
+
+  printf("\x1b[H\x1b[JSaved %li bytes to %s.\n",
+         state.fb->size,
+         state.fb->file_name);
+
   return 1;
 }
 

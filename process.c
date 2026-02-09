@@ -81,7 +81,7 @@ handle_0x1b(void)
     {
       state.mode = 0;
 
-      printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+      printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
              state.fb->buffer,
              state.pos,
              modes[state.mode]);
@@ -99,7 +99,7 @@ handle_0x1b(void)
     case 'C':
       go_right();
   }
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
          state.fb->buffer,
          state.pos,
          modes[state.mode]);
@@ -111,7 +111,7 @@ static int
 handle_0x13(void)
 {
   state.fb->save = true;
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
          state.fb->buffer,
          state.pos,
          modes[state.mode]);
@@ -123,7 +123,7 @@ static int
 handle_0x09(void)
 {
   state.mode = 1;
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
          state.fb->buffer,
          state.pos,
          modes[state.mode]);
@@ -136,7 +136,7 @@ handle_0x08_0x7f(void)
 {
   go_left();
   state.fb->buffer[state.pos] = ' ';
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
          state.fb->buffer,
          state.pos,
          modes[state.mode]);
@@ -205,7 +205,7 @@ process_input(unsigned char input)
     {
       state.fb->buffer[state.pos] = input;
       go_right();
-      printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+      printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
              state.fb->buffer,
              state.pos,
              modes[state.mode]);
@@ -221,7 +221,7 @@ state_initialise(char* location)
   if ((state.fb = create_fb(location)) == NULL)
     return 1;
 
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
          state.fb->buffer,
          state.pos,
          modes[state.mode]);

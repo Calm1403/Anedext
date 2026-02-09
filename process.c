@@ -42,36 +42,33 @@ static state_t state = { 0, 0, NULL, NULL };
 
 static char* modes[2] = { "normal", "insert" };
 
+/* Movement test; todo: itegrate actual cursor movement.
+if ((cur_char = state.fb->buffer[state.pos]) == '\n')
+// then something like 'puts("\x1b[1E");' maybe.
+*/
+
 static void
 go_left()
 {
-  char cur_char = 0;
   do
   {
     if ((state.pos - 1) == -1)
       state.pos = state.fb->size - 1;
     else
       --state.pos;
-    /* Movement test; todo: itegrate actual cursor movement.
-    if ((cur_char = state.fb->buffer[state.pos]) == '\n')
-      // then something like 'puts("\x1b[1E");' maybe.
-    */
-    cur_char = state.fb->buffer[state.pos];
-  } while (cur_char == '\n');
+  } while (state.fb->buffer[state.pos] == '\n');
 }
 
 static void
 go_right()
 {
-  char cur_char = 0;
   do
   {
     if ((state.pos + 1) > (state.fb->size - 1))
       state.pos = 0;
     else
       ++state.pos;
-    cur_char = state.fb->buffer[state.pos];
-  } while (cur_char == '\n');
+  } while (state.fb->buffer[state.pos] == '\n');
 }
 
 static int
@@ -102,7 +99,6 @@ handle_0x1b(void)
     case 'C':
       go_right();
   }
-
   printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
          state.fb->buffer,
          state.pos,
@@ -115,10 +111,10 @@ static int
 handle_0x13(void)
 {
   state.fb->save = true;
-
-  printf("\x1b[H\x1b[JSaved %li bytes to %s.\n",
-         state.fb->size,
-         state.fb->file_name);
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n\x1b[H",
+         state.fb->buffer,
+         state.pos,
+         modes[state.mode]);
 
   return 1;
 }
@@ -151,7 +147,6 @@ handle_0x08_0x7f(void)
 static node_t*
 register_maps(void)
 {
-  node_t* end = NULL;
   if (add_node(&state.key_maps, handle_0x1b, 0x1b) == NULL)
     goto free;
 
@@ -206,7 +201,7 @@ process_input(unsigned char input)
     case SPECIAL_NT:
       return 0;
 
-    default:
+    case NORMAL:
     {
       state.fb->buffer[state.pos] = input;
       go_right();

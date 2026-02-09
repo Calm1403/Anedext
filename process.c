@@ -175,38 +175,30 @@ free:
 }
 
 static int
-check_maps(node_t** node, unsigned int input)
+check_maps(unsigned int input)
 {
+  node_t* node = state.key_maps;
   do
   {
-    if ((*node)->key == input)
+    if (node->key == input)
     {
-      if ((*node)->mapping() == 1)
-        return 1;
+      if (node->mapping() == 1)
+        return SPECIAL_T;
 
       break;
     }
-  } while ((*node = (*node)->next) != NULL);
-  return 0;
-}
-
-static int
-determine_input(unsigned char input)
-{
-  node_t* node = state.key_maps;
-  if (check_maps(&node, input) == 1)
-    return SPECIAL_T; // Special input caused termination.
+  } while ((node = node->next) != NULL);
 
   if (node == NULL)
-    return NORMAL; // Normal input.
+    return NORMAL;
 
-  return SPECIAL_NT; // Special input didn't cause termination.
+  return SPECIAL_NT;
 }
 
 static int
 process_input(unsigned char input)
 {
-  switch (determine_input(input))
+  switch (check_maps(input))
   {
     case SPECIAL_T:
       return 1;

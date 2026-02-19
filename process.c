@@ -240,7 +240,7 @@ state_initialise(char* location)
 }
 
 static void
-uninitialise_state(void)
+state_uninitialise(void)
 {
   free_list(state.key_maps);
 
@@ -256,7 +256,7 @@ begin_processing(char* location)
   if (read_input(&process_input) == 1)
     return 1;
 
-  uninitialise_state();
+  state_uninitialise();
 
   return 0;
 }

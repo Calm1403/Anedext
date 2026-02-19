@@ -173,7 +173,7 @@ check_maps(unsigned int input)
   do
   {
     if (node->key == input)
-    {
+    { // Printables should be usable in insert mode.
       if (node->printable == true && state.mode == 1)
         return NORMAL;
 

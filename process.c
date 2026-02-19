@@ -229,10 +229,7 @@ state_initialise(char* location)
   if ((state.fb = create_fb(location)) == NULL)
     return 1;
 
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
-         state.fb->buffer,
-         state.pos,
-         modes[state.mode]);
+  print_state;
 
   if ((state.key_maps = register_maps()) == NULL)
     return 1;

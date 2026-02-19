@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 node_t*
-add_node(node_t** node, int (*map)(void), char key)
+add_node(node_t** node, int (*map)(void), char key, bool printable)
 {
   node_t* new;
   if ((new = malloc(sizeof *new)) == NULL)
@@ -13,6 +13,7 @@ add_node(node_t** node, int (*map)(void), char key)
   new->mapping = map;
   new->key = key;
   new->next = NULL;
+  new->printable = printable;
 
   if (node == NULL)
     return new;

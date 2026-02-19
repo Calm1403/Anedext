@@ -23,6 +23,12 @@
   editor for text.' Has a nice 'ring.'
 */
 
+#define print_state                                                            \
+  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",                                       \
+         state.fb->buffer,                                                     \
+         state.pos,                                                            \
+         modes[state.mode]);
+
 typedef struct state_s
 {
   int mode;
@@ -51,7 +57,9 @@ static void
 go_left()
 {
   do
-  {
+  { // Don't know if this top check works; to be tested.
+    if (state.fb->buffer[state.pos] == '\0')
+      break;
     if ((state.pos - 1) == -1)
       state.pos = state.fb->size - 1;
     else
@@ -64,6 +72,8 @@ go_right()
 {
   do
   {
+    if (state.fb->buffer[state.pos] == '\0')
+      break;
     if ((state.pos + 1) > (state.fb->size - 1))
       state.pos = 0;
     else
@@ -72,50 +82,39 @@ go_right()
 }
 
 static int
+handle_h(void)
+{
+  go_left();
+  print_state;
+  return 0;
+}
+
+static int
+handle_l(void)
+{
+  go_right();
+  print_state;
+  return 0;
+}
+
+static int
 handle_0x1b(void)
 {
-  char seq[2] = { 0 };
-  if (read(STDIN_FILENO, seq, 2) == 0)
+  if (state.mode == 1)
   {
-    if (state.mode == 1)
-    {
-      state.mode = 0;
-
-      printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
-             state.fb->buffer,
-             state.pos,
-             modes[state.mode]);
-
-      return 0;
-    }
-    fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
-    return 1;
+    state.mode = 0;
+    print_state;
+    return 0;
   }
-  switch (seq[1])
-  {
-    case 'D':
-      go_left();
-      break;
-    case 'C':
-      go_right();
-  }
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
-         state.fb->buffer,
-         state.pos,
-         modes[state.mode]);
-
-  return 0;
+  fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
+  return 1;
 }
 
 static int
 handle_0x13(void)
 {
   state.fb->save = true;
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
-         state.fb->buffer,
-         state.pos,
-         modes[state.mode]);
-
+  fputs("\x1b[H\x1b[JExiting.. bye bye (file saved)!\n", stdout);
   return 1;
 }
 
@@ -123,11 +122,7 @@ static int
 handle_0x09(void)
 {
   state.mode = 1;
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
-         state.fb->buffer,
-         state.pos,
-         modes[state.mode]);
-
+  print_state;
   return 0;
 }
 
@@ -136,30 +131,32 @@ handle_0x08_0x7f(void)
 {
   go_left();
   state.fb->buffer[state.pos] = ' ';
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
-         state.fb->buffer,
-         state.pos,
-         modes[state.mode]);
-
+  print_state;
   return 0;
 }
 
 static node_t*
 register_maps(void)
 {
-  if (add_node(&state.key_maps, handle_0x1b, 0x1b) == NULL)
+  if (add_node(&state.key_maps, handle_0x1b, 0x1b, false) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x13, 0x13) == NULL)
+  if (add_node(&state.key_maps, handle_0x13, 0x13, false) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x09, 0x09) == NULL)
+  if (add_node(&state.key_maps, handle_0x09, 0x09, false) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x08) == NULL)
+  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x08, false) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x7f) == NULL)
+  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x7f, false) == NULL)
+    goto free;
+
+  if (add_node(&state.key_maps, handle_h, 'h', true) == NULL)
+    goto free;
+
+  if (add_node(&state.key_maps, handle_l, 'l', true) == NULL)
     goto free;
 
   return state.key_maps; // If everything went well..
@@ -177,6 +174,9 @@ check_maps(unsigned int input)
   {
     if (node->key == input)
     {
+      if (node->printable == true && state.mode == 1)
+        return NORMAL;
+
       if (node->mapping() == 1)
         return SPECIAL_T;
 
@@ -203,15 +203,14 @@ process_input(unsigned char input)
 
     case NORMAL:
     {
-      state.fb->buffer[state.pos] = input;
-      go_right();
-      printf("\x1b[H\x1b[J%s\n[%li | %s]\n",
-             state.fb->buffer,
-             state.pos,
-             modes[state.mode]);
+      if (state.mode == 1)
+      {
+        state.fb->buffer[state.pos] = input;
+        go_right();
+        print_state;
+      }
     }
   }
-
   return 0;
 }
 

@@ -48,22 +48,28 @@ static state_t state = { 0, 0, NULL, NULL };
 
 static char* modes[2] = { "normal", "insert" };
 
-/* Movement test; todo: itegrate actual cursor movement.
-if ((cur_char = state.fb->buffer[state.pos]) == '\n')
-// then something like 'puts("\x1b[1E");' maybe.
+/*
+   TODO : itegrate actual cursor movement.
+
+  if ((cur_char = state.fb->buffer[state.pos]) == '\n')
+    ...
+
+  Then, something like 'puts("\x1b[1E");' maybe.
 */
 
 static void
 go_left()
-{
+{ //  TODO : Check null byte condition.
   do
-  { // Don't know if this top check works; to be tested.
-    if (state.fb->buffer[state.pos] == '\0')
-      break;
+  {
     if ((state.pos - 1) == -1)
       state.pos = state.fb->size - 1;
     else
+    {
       --state.pos;
+      if (state.fb->buffer[state.pos] == '\0')
+        continue;
+    }
   } while (state.fb->buffer[state.pos] == '\n');
 }
 
@@ -72,12 +78,14 @@ go_right()
 {
   do
   {
-    if (state.fb->buffer[state.pos] == '\0')
-      break;
     if ((state.pos + 1) > (state.fb->size - 1))
       state.pos = 0;
     else
+    {
       ++state.pos;
+      if (state.fb->buffer[state.pos] == '\0')
+        continue;
+    }
   } while (state.fb->buffer[state.pos] == '\n');
 }
 

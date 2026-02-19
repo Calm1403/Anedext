@@ -1,11 +1,4 @@
 
-#include "process.h"
-#include "file.h"
-#include "input.h"
-#include "mappings.h"
-
-#include <unistd.h>
-
 /*
   After thinking about it, looking
   at other text editor names, I've decided
@@ -22,6 +15,13 @@
   It's also fun to say 'the anedext text editor is an
   editor for text.' Has a nice 'ring.'
 */
+
+#include "process.h"
+#include "file.h"
+#include "input.h"
+#include "mappings.h"
+
+#include <unistd.h>
 
 #define print_state                                                            \
   printf("\x1b[H\x1b[J%s\n[%li | %s]\n",                                       \

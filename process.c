@@ -49,7 +49,7 @@ static state_t state = { 0, 0, NULL, NULL };
 static char* modes[2] = { "normal", "insert" };
 
 /*
-   TODO : itegrate actual cursor movement.
+   TODO : integrate actual cursor movement.
 
   if ((cur_char = state.fb->buffer[state.pos]) == '\n')
     ...

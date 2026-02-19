@@ -139,7 +139,7 @@ handle_0x08_0x7f(void)
 {
   go_left();
 
-  if (state.mode == 1)
+  if (state.mode == 1) /*  TODO : Fix this, actually resize the thing. */
     state.fb->buffer[state.pos] = ' ';
 
   print_state;

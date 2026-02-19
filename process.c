@@ -138,8 +138,10 @@ static int
 handle_0x08_0x7f(void)
 {
   go_left();
+
   if (state.mode == 1)
     state.fb->buffer[state.pos] = ' ';
+
   print_state;
   return 0;
 }

@@ -24,7 +24,7 @@
 #include <unistd.h>
 
 #define print_state                                                            \
-  printf("\x1b[H\x1b[J%s\n[%li | %s]\n",                                       \
+  printf("\x1b[H\x1b[J%s\n[Pos: %li | Mode: %s]\n",                            \
          state.fb->buffer,                                                     \
          state.pos + 1,                                                        \
          modes[state.mode]);

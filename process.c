@@ -26,7 +26,7 @@
 #define print_state                                                            \
   printf("\x1b[H\x1b[J%s\n[%li | %s]\n",                                       \
          state.fb->buffer,                                                     \
-         state.pos,                                                            \
+         state.pos + 1,                                                        \
          modes[state.mode]);
 
 typedef struct state_s

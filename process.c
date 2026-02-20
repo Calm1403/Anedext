@@ -151,6 +151,8 @@ handle_0x08_0x7f(void)
   if (state.mode == 0)
     retaps(0);
 
+  // Buffer insert backspace result: AAAPA -> AAA A
+
   state.fb->buffer[state.pos] = ' ';
   retaps(0);
 }

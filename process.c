@@ -151,7 +151,26 @@ handle_0x08_0x7f(void)
   if (state.mode == 0)
     retaps(0);
 
-  state.fb->buffer[state.pos] = 0;
+  /*
+    This has actualy proven to be extremely hard to think
+    of a solution for.
+
+    For a given buffer, say "AAAAPA", where A's are the
+    contents and P is the current position, the result
+    of pressing back space should look like this.
+
+            *0x08 pressed*
+    AAAAPA     ------>     AAAPA
+
+    The buffer is resized to 'size - 1,' with the right
+    hand side of the buffer shifted down by one; this
+    sounds simple, but I'm stuggling to write the code
+    adequate for the purpose.
+
+    I'll shift the contents down first, then I'll resize it.
+  */
+
+  state.fb->buffer[state.pos] = ' ';
   retaps(0);
 }
 

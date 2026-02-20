@@ -21,13 +21,29 @@
 #include "input.h"
 #include "mappings.h"
 
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
+// Print state.
 #define print_state                                                            \
   printf("\x1b[H\x1b[J%s\n[Pos: %li | Mode: %s]\n",                            \
          state.fb->buffer,                                                     \
          state.pos + 1,                                                        \
          modes[state.mode]);
+
+// Return and print state.
+#define retaps(code)                                                           \
+  {                                                                            \
+    print_state;                                                               \
+    return code;                                                               \
+  }
+
+#define retapp(code, prompt, stream)                                           \
+  {                                                                            \
+    fputs(prompt, stream);                                                     \
+    return code;                                                               \
+  }
 
 typedef struct state_s
 {
@@ -93,16 +109,14 @@ static int
 handle_h(void)
 {
   go_left();
-  print_state;
-  return 0;
+  retaps(0);
 }
 
 static int
 handle_l(void)
 {
   go_right();
-  print_state;
-  return 0;
+  retaps(0);
 }
 
 static int
@@ -111,39 +125,34 @@ handle_0x1b(void)
   if (state.mode == 1)
   {
     state.mode = 0;
-    print_state;
-    return 0;
+    retaps(0);
   }
-  fputs("\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
-  return 1;
+  retapp(1, "\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
 }
 
 static int
 handle_0x13(void)
 {
   state.fb->save = true;
-  fputs("\x1b[H\x1b[JExiting.. bye bye (file saved)!\n", stdout);
-  return 1;
+  retapp(1, "\x1b[H\x1b[JExiting.. bye bye (file saved)!\n", stdout);
 }
 
 static int
 handle_0x09(void)
 {
   state.mode = 1;
-  print_state;
-  return 0;
+  retaps(0);
 }
 
 static int
 handle_0x08_0x7f(void)
-{
+{ //  TODO : Fix this, resize buffer.
   go_left();
+  if (state.mode == 0)
+    retaps(0);
 
-  if (state.mode == 1) /*  TODO : Fix this, actually resize the thing. */
-    state.fb->buffer[state.pos] = ' ';
-
-  print_state;
-  return 0;
+  state.fb->buffer[state.pos] = ' ';
+  retaps(0);
 }
 
 static node_t*
@@ -218,11 +227,10 @@ process_input(unsigned char input)
       {
         state.fb->buffer[state.pos] = input;
         go_right();
-        print_state;
       }
     }
   }
-  return 0;
+  retaps(0);
 }
 
 static int

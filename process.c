@@ -159,7 +159,6 @@ handle_0x08_0x7f(void)
     retaps(0);
 
   go_left();
-
   for (int i = state.pos; i + 1 < state.fb->size; ++i)
     state.fb->buffer[i] = state.fb->buffer[i + 1];
 

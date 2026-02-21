@@ -150,29 +150,26 @@ handle_0x09(void)
 
               *0x08 pressed*
   AAAAPA\n\0     ------>     AAAPA\n\0
-
-  The buffer is resized to 'fb->size - 1,' with the right
-  hand side of the buffer shifted down by one; this
-  sounds simple, but I'm stuggling to write the code
-  adequate for the purpose.
-
-  I need to ensure that the user cannot have access to the
-  null byte at the end of the buffer. I allocate the buffer
-  as size + 1 in file.c; this means fb->size does not include
-  the null byte.
-
-          | fb->size |
-  BUFFER: |AAAA ... A| \0 <-- position is fb->size + 1 (one indexed)
 */
 
 static int
 handle_0x08_0x7f(void)
 {
-  if (state.mode == 0)
+  if (state.mode == 0 || state.fb->size == 1)
     retaps(0);
 
   go_left();
-  state.fb->buffer[state.pos] = ' ';
+
+  for (int i = state.pos; i + 1 < state.fb->size; ++i)
+    state.fb->buffer[i] = state.fb->buffer[i + 1];
+
+  if (realloc(state.fb->buffer, state.fb->size -= 1) == NULL)
+  {
+    if (state.fb->size == 0)
+      retapp(1, "\x1b[H\x1b[JThis shouldn't happen..\n", stderr);
+
+    retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
+  }
 
   retaps(0);
 }

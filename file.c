@@ -18,11 +18,11 @@ create_fb(char* location)
   }
 
   fseek(fb->file_pointer, 0L, SEEK_END);
-  if ((fb->size = ftell(fb->file_pointer)) == 0)
+  if ((fb->size = (ftell(fb->file_pointer) + 1)) == 0)
     return NULL;
   fseek(fb->file_pointer, 0L, SEEK_SET);
 
-  if ((fb->buffer = malloc(fb->size + 1)) == NULL)
+  if ((fb->buffer = malloc(fb->size)) == NULL)
   {
     fclose(fb->file_pointer);
     free(fb);

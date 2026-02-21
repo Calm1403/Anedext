@@ -27,10 +27,11 @@
 
 // Print state.
 #define print_state                                                            \
-  printf("\x1b[H\x1b[J%s\n[Pos: %li | Mode: %s]\n",                            \
+  printf("\x1b[H\x1b[J%s\n[Pos: %li | Mode: %s | Size: %li]\n",                \
          state.fb->buffer,                                                     \
          state.pos + 1,                                                        \
-         modes[state.mode]);
+         modes[state.mode],                                                    \
+         state.fb->size);
 
 // Return and print state.
 #define retaps(code)                                                           \
@@ -39,6 +40,7 @@
     return code;                                                               \
   }
 
+// Return and print prompt.
 #define retapp(code, prompt, stream)                                           \
   {                                                                            \
     fputs(prompt, stream);                                                     \
@@ -75,18 +77,15 @@ static char* modes[2] = { "normal", "insert" };
 
 static void
 go_left()
-{ //  TODO : Check null byte condition.
+{
   do
   {
     if ((state.pos - 1) == -1)
       state.pos = state.fb->size - 1;
     else
-    {
       --state.pos;
-      if (state.fb->buffer[state.pos] == '\0')
-        continue;
-    }
-  } while (state.fb->buffer[state.pos] == '\n');
+
+  } while (state.fb->buffer[state.pos] == '\0');
 }
 
 static void
@@ -97,12 +96,9 @@ go_right()
     if ((state.pos + 1) > (state.fb->size - 1))
       state.pos = 0;
     else
-    {
       ++state.pos;
-      if (state.fb->buffer[state.pos] == '\0')
-        continue;
-    }
-  } while (state.fb->buffer[state.pos] == '\n');
+
+  } while (state.fb->buffer[state.pos] == '\0');
 }
 
 static int
@@ -144,33 +140,40 @@ handle_0x09(void)
   retaps(0);
 }
 
+/*
+  This has actualy proven to be extremely hard to think
+  of a solution for.
+
+  For a given buffer, say "AAAAPA\n\0", where A's are the
+  contents and P is the current position, the result
+  of pressing back space should look like this.
+
+              *0x08 pressed*
+  AAAAPA\n\0     ------>     AAAPA\n\0
+
+  The buffer is resized to 'fb->size - 1,' with the right
+  hand side of the buffer shifted down by one; this
+  sounds simple, but I'm stuggling to write the code
+  adequate for the purpose.
+
+  I need to ensure that the user cannot have access to the
+  null byte at the end of the buffer. I allocate the buffer
+  as size + 1 in file.c; this means fb->size does not include
+  the null byte.
+
+          | fb->size |
+  BUFFER: |AAAA ... A| \0 <-- position is fb->size + 1 (one indexed)
+*/
+
 static int
 handle_0x08_0x7f(void)
-{ //  TODO : Fix this, resize buffer.
-  go_left();
+{
   if (state.mode == 0)
     retaps(0);
 
-  /*
-    This has actualy proven to be extremely hard to think
-    of a solution for.
-
-    For a given buffer, say "AAAAPA", where A's are the
-    contents and P is the current position, the result
-    of pressing back space should look like this.
-
-            *0x08 pressed*
-    AAAAPA     ------>     AAAPA
-
-    The buffer is resized to 'size - 1,' with the right
-    hand side of the buffer shifted down by one; this
-    sounds simple, but I'm stuggling to write the code
-    adequate for the purpose.
-
-    I'll shift the contents down first, then I'll resize it.
-  */
-
+  go_left();
   state.fb->buffer[state.pos] = ' ';
+
   retaps(0);
 }
 

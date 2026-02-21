@@ -150,6 +150,18 @@ handle_0x09(void)
 
               *0x08 pressed*
   AAAAPA\n\0     ------>     AAAPA\n\0
+
+  The solution for this was to include the null byte
+  in the size represented by state.fb->size; this
+  way I can resize the sequence effectively.
+
+  Proceeding:
+
+    When we remove the entire buffer, the only character
+    remaining will be the nullbyte, which a user can't remove,
+    so we prevent the user from deleting anymore characters in
+    the above condition of handle_0x08_0x7f; implementing the
+    rest of the insertion logic is the next stage I think.
 */
 
 static int
@@ -163,12 +175,7 @@ handle_0x08_0x7f(void)
     state.fb->buffer[i] = state.fb->buffer[i + 1];
 
   if (realloc(state.fb->buffer, state.fb->size -= 1) == NULL)
-  {
-    if (state.fb->size == 0)
-      retapp(1, "\x1b[H\x1b[JThis shouldn't happen..\n", stderr);
-
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
-  }
 
   retaps(0);
 }

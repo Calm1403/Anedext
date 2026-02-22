@@ -138,7 +138,8 @@ handle_0x09(void)
 
   The partial solution for this was to include the null byte
   in the size represented by state.fb->size; this
-  way I can resize the sequence effectively.
+  way I can resize the sequence effectively, just have to be
+  sure not to add the null terminator to the buffer later on.
 */
 
 static int

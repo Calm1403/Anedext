@@ -21,6 +21,7 @@
 #include "input.h"
 #include "mappings.h"
 
+#include <endian.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -65,15 +66,6 @@ enum
 static state_t state = { 0, 0, NULL, NULL };
 
 static char* modes[2] = { "normal", "insert" };
-
-/*
-   TODO : integrate actual cursor movement.
-
-  if ((cur_char = state.fb->buffer[state.pos]) == '\n')
-    ...
-
-  Then, something like 'puts("\x1b[1E");' maybe.
-*/
 
 static void
 go_left()
@@ -127,13 +119,6 @@ handle_0x1b(void)
 }
 
 static int
-handle_0x13(void)
-{
-  state.fb->save = true;
-  retapp(1, "\x1b[H\x1b[JExiting.. bye bye (file saved)!\n", stdout);
-}
-
-static int
 handle_0x09(void)
 {
   state.mode = 1;
@@ -166,8 +151,35 @@ handle_0x08_0x7f(void)
   for (int i = state.pos; i + 1 < state.fb->size; ++i)
     state.fb->buffer[i] = state.fb->buffer[i + 1];
 
+  /*
+    "The returned pointer may be the same as p if the allocation was not moved
+    (e.g., there was room to expand the allocation in-place), or different from
+    p if the allocation was moved to a new address." - Realloc man.
+
+    To emphasise, "(the return may be) different from p if the allocation was
+    moved to a new address."
+
+    And better yet, "If the area pointed to was moved, a free(p) is done."
+
+    This code is kinda like playing russian roulet with the memory allocator.
+
+    What fun!
+  */
+
   if (realloc(state.fb->buffer, state.fb->size -= 1) == NULL)
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
+
+  retaps(0);
+}
+
+static int
+handle_normal(unsigned int input)
+{
+  if (state.mode == 0)
+    retaps(0);
+
+  state.fb->buffer[state.pos] = input;
+  go_right();
 
   retaps(0);
 }
@@ -176,9 +188,6 @@ static node_t*
 register_maps(void)
 {
   if (add_node(&state.key_maps, handle_0x1b, 0x1b, false) == NULL)
-    goto free;
-
-  if (add_node(&state.key_maps, handle_0x13, 0x13, false) == NULL)
     goto free;
 
   if (add_node(&state.key_maps, handle_0x09, 0x09, false) == NULL)
@@ -239,15 +248,11 @@ process_input(unsigned char input)
       return 0;
 
     case NORMAL:
-    {
-      if (state.mode == 1)
-      {
-        state.fb->buffer[state.pos] = input;
-        go_right();
-      }
-    }
+      return handle_normal(input);
+
+    default:
+      retapp(1, "\x1b[H\x1b[JStrange input..", stderr);
   }
-  retaps(0);
 }
 
 static int

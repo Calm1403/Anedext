@@ -10,7 +10,7 @@ create_fb(char* location)
   if ((fb = malloc(sizeof *fb)) == NULL)
     return NULL;
 
-  *fb = (file_buffer_t){ .file_name = location, .save = false };
+  fb->file_name = location;
   if ((fb->file_pointer = fopen(fb->file_name, "r+")) == NULL)
   {
     free(fb);
@@ -37,12 +37,6 @@ create_fb(char* location)
 void
 deallocate_fb(file_buffer_t* fb)
 {
-  if (fb->save == true)
-  {
-    fseek(fb->file_pointer, 0L, SEEK_SET);
-    fwrite(fb->buffer, 1, fb->size, fb->file_pointer);
-  }
-
   free(fb->buffer);
   fclose(fb->file_pointer);
   free(fb);

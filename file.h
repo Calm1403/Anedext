@@ -11,7 +11,6 @@ typedef struct file_buffer_s
   FILE* file_pointer;
   char* buffer;
   size_t size;
-  bool save;
 } file_buffer_t;
 
 extern file_buffer_t*

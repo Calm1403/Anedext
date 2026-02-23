@@ -20,9 +20,9 @@
   For the most part I assume that arithmetic overflow just isn't a thing; I have
   a plan for determining if it does occur though, which I'll implement later.
 
-  For arithmetic overflow to occur, given two integers of the same bit width 'a'
-  and 'b,' the sum of the two integers would need to surpass the maximum
-  representable size that the common integer type may hold.
+  For arithmetic overflow to occur, given two unsigned integers of the same bit
+  width 'a' and 'b,' the sum of the two integers would need to surpass the
+  maximum representable size that the common integer type may hold.
 
     a + b > int_max
 

@@ -36,17 +36,19 @@
 
 // Return and print state.
 #define retaps(code)                                                           \
+  do                                                                           \
   {                                                                            \
     print_state;                                                               \
     return code;                                                               \
-  }
+  } while (0)
 
 // Return and print prompt.
 #define retapp(code, prompt, stream)                                           \
+  do                                                                           \
   {                                                                            \
     fputs(prompt, stream);                                                     \
     return code;                                                               \
-  }
+  } while (0)
 
 typedef struct state_s
 {
@@ -133,8 +135,8 @@ handle_0x09(void)
   contents and P is the current position, the result
   of pressing back space should look like this.
 
-              *0x08 pressed*
-  AAAAPA\n\0     ------>     AAAPA\n\0
+                *0x08 pressed*
+    AAAAPA\n\0     ------>     AAAPA\n\0
 
   The partial solution for this was to include the null byte
   in the size represented by state.fb->size; this
@@ -149,25 +151,11 @@ handle_0x08_0x7f(void)
     retaps(0);
 
   go_left();
-  for (int i = state.pos; i + 1 < state.fb->size; ++i)
+  for (size_t i = state.pos; i + 1 < state.fb->size; ++i)
     state.fb->buffer[i] = state.fb->buffer[i + 1];
 
-  /*
-    "The returned pointer may be the same as p if the allocation was not moved
-    (e.g., there was room to expand the allocation in-place), or different from
-    p if the allocation was moved to a new address." - Realloc man.
-
-    To emphasise, "(the return may be) different from p if the allocation was
-    moved to a new address."
-
-    And better yet, "If the area pointed to was moved, a free(p) is done."
-
-    This code is kinda like playing russian roulet with the memory allocator.
-
-    What fun!
-  */
-
-  if (realloc(state.fb->buffer, state.fb->size -= 1) == NULL)
+  state.fb->buffer = realloc(state.fb->buffer, state.fb->size -= 1);
+  if (state.fb->buffer == NULL)
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
 
   retaps(0);
@@ -178,6 +166,19 @@ handle_normal(unsigned int input)
 {
   if (state.mode == 0)
     retaps(0);
+
+  // The right operand is the last non-null character in the buffer.
+  if (state.pos == state.fb->size - 2)
+  {
+    state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
+    if (state.fb->buffer == NULL)
+      retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
+
+    state.fb->buffer[state.fb->size - 1] = '\0';
+  }
+
+  if (state.fb->buffer[state.pos + 1] == '\0')
+    state.fb->buffer[state.pos + 1] = ' ';
 
   state.fb->buffer[state.pos] = input;
   go_right();

@@ -14,6 +14,34 @@
 
   It's also fun to say 'the anedext text editor is an
   editor for text.' Has a nice 'ring.'
+
+  There are currently numerous problems with this code; it's horribly naive.
+
+  For the most part I assume that arithmetic overflow just isn't a thing; I have
+  a plan for determining if it does occur though, which I'll implement later.
+
+  For arithmetic overflow to occur, given two integers of the same bit width 'a'
+  and 'b,' the sum of the two integers would need to surpass the maximum
+  representable size that the common integer type may hold.
+
+    a + b > int_max
+
+  We can have int_max equate to (common type)(-1):
+
+    a + b > (common type)(-1)
+
+  Subtracting one of the integers, we get this:
+
+    a > (common type)(-1) - b
+
+  Note that (common type)(-1) - b is also the bitwise (one bit) complement of b.
+
+    a > (2^n - 1) - b => a > ~b, with 'n' being the number of digits used by the
+    type.
+
+  Thus, we only need to determine if a number if greater than the complement of
+  the other operand (which I assume to be either one, haven't really tested this
+  idea).
 */
 
 #include "process.h"
@@ -30,7 +58,7 @@
 #define print_state                                                            \
   printf("\x1b[H\x1b[J%s\n[Pos: %li | Mode: %s | Size: %li]\n",                \
          state.fb->buffer,                                                     \
-         state.pos + 1,                                                        \
+         state.pos,                                                            \
          modes[state.mode],                                                    \
          state.fb->size);
 
@@ -72,39 +100,37 @@ static char* modes[2] = { "normal", "insert" };
 static void
 go_left()
 {
-  do
-  {
-    if ((state.pos - 1) == -1)
-      state.pos = state.fb->size - 1;
-    else
-      --state.pos;
-
-  } while (state.fb->buffer[state.pos] == '\0');
+  if ((state.pos - 1) == -1)
+    state.pos = state.fb->size - 2;
+  else
+    --state.pos;
 }
 
 static void
 go_right()
 {
-  do
-  {
-    if ((state.pos + 1) > (state.fb->size - 1))
-      state.pos = 0;
-    else
-      ++state.pos;
-
-  } while (state.fb->buffer[state.pos] == '\0');
+  if ((state.pos + 1) > (state.fb->size - 2))
+    state.pos = 0;
+  else
+    ++state.pos;
 }
 
 static int
 handle_h(void)
-{
+{ // This ensures that a user can't move about freely when the size is zero.
+  if (state.fb->size == 1)
+    retaps(1);
+
   go_left();
   retaps(0);
 }
 
 static int
 handle_l(void)
-{
+{ // This ensures that a user can't move about freely when the size is zero.
+  if (state.fb->size == 1)
+    retaps(1);
+
   go_right();
   retaps(0);
 }
@@ -127,27 +153,10 @@ handle_0x09(void)
   retaps(0);
 }
 
-/*
-  This has actualy proven to be extremely hard to think
-  of a solution for.
-
-  For a given buffer, say "AAAAPA\n\0", where A's are the
-  contents and P is the current position, the result
-  of pressing back space should look like this.
-
-                *0x08 pressed*
-    AAAAPA\n\0     ------>     AAAPA\n\0
-
-  The partial solution for this was to include the null byte
-  in the size represented by state.fb->size; this
-  way I can resize the sequence effectively, just have to be
-  sure not to add the null terminator to the buffer later on.
-*/
-
 static int
 handle_0x08_0x7f(void)
 {
-  if (state.mode == 0 || state.fb->size == 1)
+  if (state.mode == 0 || state.pos == 0)
     retaps(0);
 
   go_left();
@@ -156,7 +165,12 @@ handle_0x08_0x7f(void)
 
   state.fb->buffer = realloc(state.fb->buffer, state.fb->size -= 1);
   if (state.fb->buffer == NULL)
+  {
+    if (state.fb->size == 0)
+      retaps(0);
+
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
+  }
 
   retaps(0);
 }
@@ -168,17 +182,17 @@ handle_normal(unsigned int input)
     retaps(0);
 
   // The right operand is the last non-null character in the buffer.
-  if (state.pos == state.fb->size - 2)
+  if (state.pos == state.fb->size - 2 || state.fb->size == 1)
   {
     state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
     if (state.fb->buffer == NULL)
       retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
 
+    // Memset the rest of the buffer because of crap contents.
+    memset(&state.fb->buffer[state.pos], 0, state.fb->size - state.pos);
+
     state.fb->buffer[state.fb->size - 1] = '\0';
   }
-
-  if (state.fb->buffer[state.pos + 1] == '\0')
-    state.fb->buffer[state.pos + 1] = ' ';
 
   state.fb->buffer[state.pos] = input;
   go_right();

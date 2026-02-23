@@ -25,6 +25,7 @@ t_set_baked_mode(void)
 
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_state) == -1)
     return -1;
+
   return 0;
 }
 

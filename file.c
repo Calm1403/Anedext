@@ -48,7 +48,7 @@ create_fb(char* location)
   {
     if (fclose(fb->file_pointer))
     { /*  NOTE : Not entirely sure about this. */
-      perror("\x1b[H\x1b[Jfopen failure");
+      perror("\x1b[H\x1b[JFopen failure");
       if (errno == EINTR)
         close(fileno(fb->file_pointer));
     }
@@ -56,7 +56,7 @@ create_fb(char* location)
     return NULL;
   }
 
-  fb->buffer[fb->size] = '\0';
+  fb->buffer[fb->size - 1] = '\0';
   fread(fb->buffer, 1, fb->size, fb->file_pointer);
   return fb;
 }

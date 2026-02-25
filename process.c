@@ -78,13 +78,13 @@
     return code;                                                               \
   } while (0)
 
-typedef struct state_s
+static struct state_s
 {
   int mode;
   size_t pos;
   node_t* key_maps;
   file_buffer_t* fb;
-} state_t;
+} state;
 
 enum
 {
@@ -92,8 +92,6 @@ enum
   SPECIAL_T = 1,  // Special input; terminating.
   NORMAL = 0,     // Non special input; printable characters.
 };
-
-static state_t state = { 0, 0, NULL, NULL };
 
 static char* modes[2] = { "normal", "insert" };
 
@@ -119,7 +117,7 @@ static int
 handle_h(void)
 { // This ensures that a user can't move about freely when the size is zero.
   if (state.fb->size == 1)
-    retaps(1);
+    retaps(0);
 
   go_left();
   retaps(0);
@@ -129,7 +127,27 @@ static int
 handle_l(void)
 { // This ensures that a user can't move about freely when the size is zero.
   if (state.fb->size == 1)
-    retaps(1);
+    retaps(0);
+
+  /*
+    Problem here, if Herr User moves forward before writing anything, the buffer
+    is nulled prematurely.
+
+    Stage 1:
+
+      P
+      |0|| || || ||0| <-- These are buffer 'cells.'
+
+    *l is pressed*
+
+    Stage 2:
+
+          P
+      |0||a|| || ||0|
+
+    'P' represents the position; zero is left in the buffer, causing the string
+    to be null terminated prematurely.
+  */
 
   go_right();
   retaps(0);
@@ -265,15 +283,14 @@ process_input(unsigned char input)
 
     case NORMAL:
       return handle_normal(input);
-
-    default:
-      retapp(1, "\x1b[H\x1b[JStrange input..", stderr);
   }
+  return 0;
 }
 
 static int
 state_initialise(char* location)
 {
+  state = (struct state_s){ 0, 0, NULL, NULL };
   if ((state.fb = create_fb(location)) == NULL)
     return 1;
 

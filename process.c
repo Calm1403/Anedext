@@ -39,7 +39,7 @@
     a > (2^n - 1) - b => a > ~b, with 'n' being the number of digits used by the
     type.
 
-  Thus, we only need to determine if a number if greater than the complement of
+  Thus, we only need to determine if a number is greater than the complement of
   the other operand (which I assume to be either one, haven't really tested this
   idea).
 */

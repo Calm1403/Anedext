@@ -138,7 +138,7 @@ handle_l(void)
       |0|| || || ||0| <-- These are buffer 'cells.'
     }
 
-    *'l' is pressed, following a switch to insert then 'a'.*
+    'l' is pressed, following a switch to insert then 'a'.
 
     Stage 2 (Diagram Block):
     {

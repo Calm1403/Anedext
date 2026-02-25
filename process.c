@@ -134,7 +134,7 @@ handle_l(void)
 
     Stage 1:
 
-      P
+       P
       |0|| || || ||0| <-- These are buffer 'cells.'
 
     *l is pressed*

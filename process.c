@@ -49,7 +49,6 @@
 #include "input.h"
 #include "mappings.h"
 
-#include <endian.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

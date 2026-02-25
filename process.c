@@ -148,11 +148,7 @@ handle_l(void)
 
     'P' represents the position; zero is left in the buffer, causing the string
     to be null terminated prematurely.
-
-    A hack for it right now would be to treat 'l' as a space.
   */
-
-  state.fb->buffer[state.pos] = ' ';
 
   go_right();
   retaps(0);

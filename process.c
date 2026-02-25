@@ -130,19 +130,21 @@ handle_l(void)
 
   /*
     Problem here, if Herr User moves forward before writing anything, the buffer
-    is nulled prematurely.
+    isn't displayed.
 
-    Stage 1:
-
+    Stage 1 (Diagram Block):
+    {
        P
       |0|| || || ||0| <-- These are buffer 'cells.'
+    }
 
-    *l is pressed*
+    *'l' is pressed, following a switch to insert then 'a'*
 
-    Stage 2:
-
+    Stage 2 (Diagram Block):
+    {
           P
       |0||a|| || ||0|
+    }
 
     'P' represents the position; zero is left in the buffer, causing the string
     to be null terminated prematurely.

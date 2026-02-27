@@ -1,26 +1,5 @@
 
-/*
-  Linux manual page regarding EINTR on close:
-
-    "Retrying the close() after a failure return is the wrong thing to
-    do, since this may cause a reused file descriptor from another
-    thread to be closed."
-
-  I'm not multithreading, using blocking I/o, fair enough, but what's
-  interesting about it this about EINTR:
-
-    "The caller must then once more use close() to close
-    the file descriptor, to avoid file descriptor leaks.
-
-    This divergence in implementation behaviors provides a difficult hurdle
-    for portable applications, since on many implementations, close()
-    must not be called again after an EINTR error, and on at least
-    one, close() must be called again."
-*/
-
 #include "file.h"
-
-#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -46,12 +25,7 @@ create_fb(char* location)
 
   if ((fb->buffer = malloc(fb->size)) == NULL)
   {
-    if (fclose(fb->file_pointer) == EOF)
-    { /*  NOTE : Not entirely sure about this. */
-      perror("\x1b[H\x1b[JFopen failure");
-      if (errno == EINTR)
-        close(fileno(fb->file_pointer));
-    }
+    fclose(fb->file_pointer);
     free(fb);
     return NULL;
   }

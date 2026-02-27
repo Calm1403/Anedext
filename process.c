@@ -234,7 +234,7 @@ check_maps(unsigned int input)
     if (node->key == input)
     {
       if (state.mode == 1)
-      { //  TODO : Generalise this.
+      { //  TODO : Generalise this; not through maps.
         if ('a' < node->key && node->key < 'z')
           return NORMAL;
 

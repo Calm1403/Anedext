@@ -17,6 +17,9 @@ extern file_buffer_t*
 create_fb(char*);
 
 extern void
-deallocate_fb(file_buffer_t* fb);
+deallocate_fb(file_buffer_t*);
+
+extern int
+save_fb(file_buffer_t*);
 
 #endif

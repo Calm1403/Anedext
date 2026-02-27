@@ -15,33 +15,9 @@
   It's also fun to say 'the anedext text editor is an
   editor for text.' Has a nice 'ring.'
 
-  There are currently numerous problems with this code; it's horribly naive.
-
-  For the most part I assume that arithmetic overflow just isn't a thing; I have
-  a plan for determining if it does occur though, which I'll implement later.
-
-  For arithmetic overflow to occur, given two unsigned integers of the same bit
-  width 'a' and 'b,' the sum of the two integers would need to surpass the
-  maximum representable size that the common integer type may hold.
-
-    a + b > int_max
-
-  We can have int_max equate to (common type)(-1):
-
-    a + b > (common type)(-1)
-
-  Subtracting one of the integers, we get this:
-
-    a > (common type)(-1) - b
-
-  Note that (common type)(-1) - b is also the bitwise (one bit) complement of b.
-
-    a > (2^n - 1) - b => a > ~b, with 'n' being the number of digits used by the
-    type.
-
-  Thus, we only need to determine if a number is greater than the complement of
-  the other operand (which I assume to be either one, haven't really tested this
-  idea).
+  There are currently numerous problems with this code; it's horribly naive and
+  I don't think I'm implementing the linux I/o interface safely at the minute;
+  I'm going to be continually refactoring this code.
 */
 
 #include "process.h"
@@ -87,8 +63,8 @@ static struct state_s
 
 enum
 {
-  SPECIAL_NT = 2, // Special input; non terminating.
-  SPECIAL_T = 1,  // Special input; terminating.
+  SPECIAL_NT = 2, // Special input; non program terminating.
+  SPECIAL_T = 1,  // Special input; program terminating.
   NORMAL = 0,     // Non special input; printable characters.
 };
 
@@ -151,6 +127,15 @@ handle_0x09(void)
 }
 
 static int
+handle_0x13(void)
+{
+  if (save_fb(state.fb) == 1)
+    retapp(1, "Couldn't save the file buffer..\n", stderr);
+
+  retapp(0, "\x1b[H\x1b[JFile saved!\n", stdout);
+}
+
+static int
 handle_0x08_0x7f(void)
 {
   if (state.mode == 0 || state.fb->size <= 2)
@@ -163,12 +148,7 @@ handle_0x08_0x7f(void)
 
   state.fb->buffer = realloc(state.fb->buffer, state.fb->size -= 1);
   if (state.fb->buffer == NULL)
-  {
-    if (state.fb->size == 0)
-      retaps(0);
-
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
-  }
 
   // Weird bug fix; user could remove null byte.
   if (state.pos == state.fb->size - 1)
@@ -178,7 +158,7 @@ handle_0x08_0x7f(void)
 }
 
 static int
-handle_normal(unsigned int input)
+handle_normal(unsigned char input)
 {
   if (state.mode == 0)
     retaps(0);
@@ -217,6 +197,9 @@ register_maps(void)
   if (add_node(&state.key_maps, handle_0x08_0x7f, 0x7f) == NULL)
     goto free;
 
+  if (add_node(&state.key_maps, handle_0x13, 0x13) == NULL)
+    goto free;
+
   if (add_node(&state.key_maps, handle_h, 'h') == NULL)
     goto free;
 
@@ -231,7 +214,7 @@ free:
 }
 
 static int
-check_maps(unsigned int input)
+check_maps(unsigned char input)
 {
   node_t* node = state.key_maps;
   do

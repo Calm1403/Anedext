@@ -12,7 +12,7 @@ create_fb(char* location)
   fb->file_name = location;
   if ((fb->file_pointer = fopen(fb->file_name, "r+")) == NULL)
   {
-    perror("\x1b[H\x1b[Jfopen failure");
+    perror("\x1b[H\x1b[JFopen failure");
     free(fb);
     return NULL;
   }
@@ -34,6 +34,24 @@ create_fb(char* location)
   return fb;
 }
 
+int
+save_fb(file_buffer_t* fb)
+{
+  fb->file_pointer = freopen(fb->file_name, "w", fb->file_pointer);
+  if (fb->file_pointer == NULL)
+  {
+    perror("\x1b[H\x1b[JFreopen failed");
+    return 1;
+  }
+
+  if (fwrite(fb->buffer, fb->size, 1, fb->file_pointer) == -1)
+  {
+    perror("\x1b[H\x1b[JFwrite failed");
+    return 1;
+  }
+
+  return 0;
+}
 void
 deallocate_fb(file_buffer_t* fb)
 {

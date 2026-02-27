@@ -157,6 +157,7 @@ handle_0x08_0x7f(void)
     retaps(0);
 
   go_left();
+
   for (size_t i = state.pos; i + 1 < state.fb->size; ++i)
     state.fb->buffer[i] = state.fb->buffer[i + 1];
 
@@ -169,6 +170,10 @@ handle_0x08_0x7f(void)
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
   }
 
+  // Weird bug fix; user could remove null byte.
+  if (state.pos == state.fb->size - 1)
+    state.pos -= 1;
+
   retaps(0);
 }
 
@@ -179,7 +184,7 @@ handle_normal(unsigned int input)
     retaps(0);
 
   // The right operand is the last non-null character in the buffer.
-  if (state.pos == state.fb->size - 2 || state.fb->size == 1)
+  if (state.fb->size == 1 || state.pos == state.fb->size - 2)
   {
     state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
     if (state.fb->buffer == NULL)

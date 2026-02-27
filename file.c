@@ -46,7 +46,7 @@ create_fb(char* location)
 
   if ((fb->buffer = malloc(fb->size)) == NULL)
   {
-    if (fclose(fb->file_pointer))
+    if (fclose(fb->file_pointer) == EOF)
     { /*  NOTE : Not entirely sure about this. */
       perror("\x1b[H\x1b[JFopen failure");
       if (errno == EINTR)

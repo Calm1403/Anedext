@@ -114,7 +114,7 @@ go_right()
 
 static int
 handle_h(void)
-{ // This ensures that a user can't move about freely when the size is zero.
+{ // This ensures that a user can't move about freely when the size is zero one.
   if (state.fb->size == 1)
     retaps(0);
 
@@ -124,31 +124,9 @@ handle_h(void)
 
 static int
 handle_l(void)
-{ // This ensures that a user can't move about freely when the size is zero.
+{ // This ensures that a user can't move about freely when the size is one.
   if (state.fb->size == 1)
     retaps(0);
-
-  /*
-    Problem here, if Herr User moves forward before writing anything, the buffer
-    isn't displayed.
-
-    Stage 1 (Diagram Block):
-    {
-       P
-      |0|| || || ||0| <-- These are buffer 'cells.'
-    }
-
-    'l' is pressed, following a switch to insert then 'a'.
-
-    Stage 2 (Diagram Block):
-    {
-          P
-      |0||a|| || ||0|
-    }
-
-    'P' represents the position; zero is left in the buffer, causing the string
-    to be null terminated prematurely.
-  */
 
   go_right();
   retaps(0);
@@ -175,7 +153,7 @@ handle_0x09(void)
 static int
 handle_0x08_0x7f(void)
 {
-  if (state.mode == 0 || state.pos == 0)
+  if (state.mode == 0 || state.fb->size <= 2)
     retaps(0);
 
   go_left();
@@ -208,7 +186,7 @@ handle_normal(unsigned int input)
       retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
 
     // Memset the rest of the buffer because of crap contents.
-    memset(&state.fb->buffer[state.pos], 0, state.fb->size - state.pos);
+    memset(&state.fb->buffer[state.pos], ' ', state.fb->size - state.pos);
 
     state.fb->buffer[state.fb->size - 1] = '\0';
   }
@@ -222,22 +200,22 @@ handle_normal(unsigned int input)
 static node_t*
 register_maps(void)
 {
-  if (add_node(&state.key_maps, handle_0x1b, 0x1b, false) == NULL)
+  if (add_node(&state.key_maps, handle_0x1b, 0x1b) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x09, 0x09, false) == NULL)
+  if (add_node(&state.key_maps, handle_0x09, 0x09) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x08, false) == NULL)
+  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x08) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x7f, false) == NULL)
+  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x7f) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_h, 'h', true) == NULL)
+  if (add_node(&state.key_maps, handle_h, 'h') == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_l, 'l', true) == NULL)
+  if (add_node(&state.key_maps, handle_l, 'l') == NULL)
     goto free;
 
   return state.key_maps; // If everything went well..
@@ -254,16 +232,20 @@ check_maps(unsigned int input)
   do
   {
     if (node->key == input)
-    { // Printables should be usable in insert mode.
-      if (node->printable == true && state.mode == 1)
-        return NORMAL;
+    {
+      if (state.mode == 1)
+      { //  TODO : Generalise this.
+        if ('a' < node->key && node->key < 'z')
+          return NORMAL;
+
+        if ('A' < node->key && node->key < 'Z')
+          return NORMAL;
+      }
 
       if (node->mapping() == 1)
         return SPECIAL_T;
-
-      break;
     }
-  } while ((node = node->next) != NULL);
+  } while (node->key != input && (node = node->next) != NULL);
 
   if (node == NULL)
     return NORMAL;

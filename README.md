@@ -5,7 +5,7 @@ The Anedext text editor is an editor for text.
 After I thought about it for a little bit, having looked
 at the names of other text editors, I decided
 to call this program 'ænedekst' - it's an abbreviation for
-the phrase '<u>an</u> <u>ed</u>itor for t<u>ext</u>.'
+the phrase 'an editor for text.'
 
 This is because it's not a particularly remarkable
 editor and because, well, it's just one amongst many.

@@ -7,7 +7,7 @@
     thread to be closed."
 
   I'm not multithreading, using blocking I/o, fair enough, but what's
-  interesting it this about EINTR:
+  interesting about it this about EINTR:
 
     "The caller must then once more use close() to close
     the file descriptor, to avoid file descriptor leaks.

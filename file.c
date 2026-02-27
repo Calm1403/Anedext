@@ -52,10 +52,14 @@ save_fb(file_buffer_t* fb)
 
   return 0;
 }
+
 void
 deallocate_fb(file_buffer_t* fb)
 {
   free(fb->buffer);
+
+  //  FIX : This is cause for concern when save_fb fails.
   fclose(fb->file_pointer);
+
   free(fb);
 }

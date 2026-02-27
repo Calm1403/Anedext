@@ -15,7 +15,7 @@ editor for text.' Has a nice 'ring.'
 
 # State
 Currently, it only runs on Linux; compiled initially on
-Linux 6.18.7 on arch.
+Arch Linux, kernel 6.18.7.
 
 There are numerous problems with this code base; it's horribly
 naive and I don't think I'm implementing the Linux I/o

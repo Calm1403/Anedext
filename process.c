@@ -1,25 +1,4 @@
 
-/*
-  After thinking about it, looking
-  at other text editor names, I've decided
-  to call this program 'anedext' - a short
-  hand word for the phrase 'an editor for text.'
-
-  'ænedekst' is the way I pronounce it.
-
-  This is because it's not a particularly remarkable
-  editor and because, well, it's an editor in the sea of many
-  editors; this is indicated by the artical 'an,' with the program's
-  purpose made clear subsequently afterwards.
-
-  It's also fun to say 'the anedext text editor is an
-  editor for text.' Has a nice 'ring.'
-
-  There are currently numerous problems with this code; it's horribly naive and
-  I don't think I'm implementing the linux I/o interface safely at the minute;
-  I'm going to be continually refactoring this code.
-*/
-
 #include "process.h"
 #include "file.h"
 #include "input.h"

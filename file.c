@@ -44,7 +44,8 @@ save_fb(file_buffer_t* fb)
     return 1;
   }
 
-  if (fwrite(fb->buffer, fb->size, 1, fb->file_pointer) == -1)
+  // We subtract one, because we don't want to save the null byte.
+  if (fwrite(fb->buffer, fb->size - 1, 1, fb->file_pointer) == -1)
   {
     perror("\x1b[H\x1b[JFwrite failed");
     return 1;

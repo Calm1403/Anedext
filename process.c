@@ -69,7 +69,7 @@ go_right()
 
 static int
 handle_h(void)
-{ // This ensures that a user can't move about freely when the size is zero one.
+{ // This ensures that a user can't move about freely when the size is one.
   if (state.fb->size == 1)
     retaps(0);
 
@@ -117,7 +117,7 @@ handle_0x13(void)
 static int
 handle_0x08_0x7f(void)
 {
-  if (state.mode == 0 || state.fb->size <= 2)
+  if (state.mode == 0 || state.fb->size == 1)
     retaps(0);
 
   go_left();
@@ -130,8 +130,11 @@ handle_0x08_0x7f(void)
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
 
   // Weird bug fix; user could remove null byte.
-  if (state.pos == state.fb->size - 1)
-    state.pos -= 1;
+  if (state.pos != 0)
+  {
+    if (state.pos == state.fb->size - 1)
+      state.pos -= 1;
+  }
 
   retaps(0);
 }
@@ -142,7 +145,7 @@ handle_normal(unsigned char input)
   if (state.mode == 0)
     retaps(0);
 
-  // The right operand is the last non-null character in the buffer.
+  // State.fb->size - 2 is the last non null character.
   if (state.fb->size == 1 || state.pos == state.fb->size - 2)
   {
     state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
@@ -156,6 +159,16 @@ handle_normal(unsigned char input)
   }
 
   state.fb->buffer[state.pos] = input;
+  go_right();
+
+  retaps(0);
+}
+
+int
+handle_0x0d(void)
+{
+  //  NOTE : Interestingly, the enter key's code doesn't seem to equate to '\n.'
+  state.fb->buffer[state.pos] = '\n';
   go_right();
 
   retaps(0);
@@ -177,6 +190,9 @@ register_maps(void)
     goto free;
 
   if (add_node(&state.key_maps, handle_0x13, 0x13) == NULL)
+    goto free;
+
+  if (add_node(&state.key_maps, handle_0x0d, 0x0d) == NULL)
     goto free;
 
   if (add_node(&state.key_maps, handle_h, 'h') == NULL)
@@ -244,8 +260,6 @@ state_initialise(char* location)
   if ((state.fb = create_fb(location)) == NULL)
     return 1;
 
-  print_state;
-
   if ((state.key_maps = register_maps()) == NULL)
     return 1;
 
@@ -260,16 +274,31 @@ state_uninitialise(void)
   deallocate_fb(state.fb);
 }
 
-int
-begin_processing(char* location)
+static int
+initialisation(char* location)
 {
   if (state_initialise(location) == 1)
     return 1;
 
+  print_state;
   if (read_input(&process_input) == 1)
     return 1;
 
   state_uninitialise();
-
   return 0;
+}
+
+int
+begin_processing(char* location)
+{
+  fputs("\x1b[?25l", stdout);
+  if (initialisation(location) == 1)
+    goto fail;
+
+  fputs("\x1b[?25h", stdout);
+  return 0;
+
+fail:
+  fputs("\x1b[?25h", stdout);
+  return 1;
 }

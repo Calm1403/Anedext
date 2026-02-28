@@ -4,14 +4,14 @@ The Anedext text editor is an editor for text.
 # About
 After I thought about it for a little bit, having looked
 at the names of other text editors, I decided
-to call this program 'ænedekst' - it's an abbreviation for
+to call this program 'anedext' - it's an abbreviation for
 the phrase 'an editor for text.'
 
 This is because it's not a particularly remarkable
 editor and because, well, it's just one amongst many.
 
 It's also fun to say 'the anedext text editor is an
-editor for text.' Has a nice 'ring.'
+editor for text.'
 
 # State
 Currently, it only runs on Linux; compiled initially on

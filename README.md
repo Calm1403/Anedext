@@ -11,7 +11,7 @@ This is because it's not a particularly remarkable
 editor and because, well, it's just one amongst many.
 
 It's also fun to say 'the anedext text editor is an
-editor for text.' Has a nice 'ring.'
+editor for text.'
 
 # State
 Currently, it only runs on Linux; compiled initially on

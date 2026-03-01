@@ -1,0 +1,32 @@
+.TH ANEDEXT 1
+
+.SH NAME
+
+Anedext \- It's an editor for text.
+
+.SH SYNOPSYS
+
+~$ ./anedext [file]
+
+.SH DESCRIPTION
+
+The Anedext text editor is an editor for text, orignally written by Calm1403.
+
+You've two modes normal and insert; insert is
+similar to Vim's replace mode, allowing a use
+r to overwrite a file's contents, in addition
+to resizing the file if the user wishes to enter
+more than what's already there.
+
+Normal mode is also very similar to Vim's, in
+that it's used primarly for navigation; to move
+right, you press 'l,' with left, you press 'h.'
+
+.SH OPTIONS
+
+There aren't any options per-se; you supply a file name as an argument to the
+program on execution.
+
+.SH SEE ALSO
+
+\%vim(1)

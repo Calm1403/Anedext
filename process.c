@@ -32,6 +32,8 @@
     return code;                                                               \
   } while (0)
 
+#define BUF_SCALE 10
+
 static struct state_s
 {
   int mode;
@@ -111,11 +113,13 @@ handle_0x13(void)
   if (save_fb(state.fb) == 1)
     retapp(1, "Couldn't save the file buffer..\n", stderr);
 
-  retapp(0, "\x1b[H\x1b[JFile saved!\n", stdout);
+  fputs("\a", stdout);
+
+  retaps(0);
 }
 
 static int
-handle_0x08_0x7f(void)
+handle_0x7f(void)
 {
   if (state.mode == 0 || state.fb->size == 1)
     retaps(0);
@@ -145,7 +149,7 @@ scale_buffer(void)
   // State.fb->size - 2 is the last non null character.
   if (state.fb->size == 1 || state.pos == state.fb->size - 2)
   {
-    state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
+    state.fb->buffer = realloc(state.fb->buffer, state.fb->size += BUF_SCALE);
     if (state.fb->buffer == NULL)
       return 1;
 
@@ -197,10 +201,7 @@ register_maps(void)
   if (add_node(&state.key_maps, handle_0x09, 0x09) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x08) == NULL)
-    goto free;
-
-  if (add_node(&state.key_maps, handle_0x08_0x7f, 0x7f) == NULL)
+  if (add_node(&state.key_maps, handle_0x7f, 0x7f) == NULL)
     goto free;
 
   if (add_node(&state.key_maps, handle_0x13, 0x13) == NULL)
@@ -296,10 +297,14 @@ initialisation(char* location)
 
   print_state;
   if (read_input(&process_input) == 1)
-    return 1;
+    goto fail;
 
   state_uninitialise();
   return 0;
+
+fail:
+  state_uninitialise();
+  return 1;
 }
 
 int

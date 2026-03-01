@@ -154,6 +154,7 @@ scale_buffer(void)
 
     state.fb->buffer[state.fb->size - 1] = '\0';
   }
+
   return 0;
 }
 

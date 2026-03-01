@@ -12,7 +12,7 @@ Anedext \- It's an editor for text.
 
 The Anedext text editor is an editor for text, orignally written by Calm1403.
 
-You've two modes normal and insert; insert is
+You've two modes, normal and insert; insert is
 similar to Vim's replace mode, allowing a use
 r to overwrite a file's contents, in addition
 to resizing the file if the user wishes to enter

@@ -140,23 +140,31 @@ handle_0x08_0x7f(void)
 }
 
 static int
-handle_normal(unsigned char input)
+scale_buffer(void)
 {
-  if (state.mode == 0)
-    retaps(0);
-
   // State.fb->size - 2 is the last non null character.
   if (state.fb->size == 1 || state.pos == state.fb->size - 2)
   {
     state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
     if (state.fb->buffer == NULL)
-      retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
+      return 1;
 
     // Memset the rest of the buffer because of crap contents.
     memset(&state.fb->buffer[state.pos], ' ', state.fb->size - state.pos);
 
     state.fb->buffer[state.fb->size - 1] = '\0';
   }
+  return 0;
+}
+
+static int
+handle_normal(unsigned char input)
+{
+  if (state.mode == 0)
+    retaps(0);
+
+  if (scale_buffer() == 1)
+    retapp(1, "\x1b[h\x1b[jrealloc failed..\n", stderr);
 
   state.fb->buffer[state.pos] = input;
   go_right();
@@ -164,10 +172,15 @@ handle_normal(unsigned char input)
   retaps(0);
 }
 
-int
+static int
 handle_0x0d(void)
 {
-  //  NOTE : Interestingly, the enter key's code doesn't seem to equate to '\n.'
+  if (state.mode == 0)
+    retaps(0);
+
+  if (scale_buffer() == 1)
+    retapp(1, "\x1b[h\x1b[jrealloc failed..\n", stderr);
+
   state.fb->buffer[state.pos] = '\n';
   go_right();
 

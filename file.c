@@ -16,36 +16,39 @@ create_fb(char* location)
 
   if ((fb->file_pointer = fopen(fb->file_name, "r+")) == NULL)
   {
-    fputs("\x1b[H\x1b[JFopen failed..\n", stderr);
+    perror("\x1b[H\x1b[JFopen failed..\n\nReason");
     goto fail;
   }
 
   fseek(fb->file_pointer, 0L, SEEK_END);
   if ((fb->size = (ftell(fb->file_pointer) + 1)) == 0)
   {
-    fputs("\x1b[H\x1b[JFtell failed..\n", stderr);
+    perror("\x1b[H\x1b[JFtell failed..\n\nReason");
     goto fail;
   }
   fseek(fb->file_pointer, 0L, SEEK_SET);
 
   if ((fb->buffer = malloc(fb->size)) == NULL)
   {
-    fputs("\x1b[H\x1b[JMalloc failed..\n", stderr);
+    perror("\x1b[H\x1b[JMalloc failed..\n\nReason");
     goto fail;
   }
 
   fb->buffer[fb->size - 1] = '\0';
   if (fread(fb->buffer, 1, fb->size - 1, fb->file_pointer) != fb->size - 1)
   {
-    fputs("\x1b[H\x1b[JFread failed..\n", stderr);
+    perror("\x1b[H\x1b[JFread failed..\n\nReason");
     goto fail;
   }
 
   return fb;
 
 fail:
-  fclose(fb->file_pointer);
+  if (fb->file_pointer != NULL)
+    fclose(fb->file_pointer);
+
   free(fb);
+
   return NULL;
 }
 
@@ -67,7 +70,7 @@ save_fb(file_buffer_t* fb)
   return 0;
 
 fail:
-  perror("\x1b[H\x1b[JSave failed");
+  perror("\x1b[H\x1b[JSave failed..\n\nReason");
   return 1;
 }
 

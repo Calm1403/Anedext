@@ -11,7 +11,7 @@ create_fb(char* location)
     return NULL;
 
   *fb = (file_buffer_t){ location, NULL, NULL, 0 };
-  if ((fb->file_pointer = fopen(fb->file_name, "r+")) == NULL)
+  if ((fb->file_pointer = fopen(fb->file_name, "r")) == NULL)
   {
     perror("\x1b[H\x1b[JFopen failed..\n\nReason");
     goto fail;

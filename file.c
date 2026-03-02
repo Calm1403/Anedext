@@ -22,8 +22,10 @@ create_fb(char* location)
 
   fseek(fb->file_pointer, 0L, SEEK_END);
   if ((fb->size = (ftell(fb->file_pointer) + 1)) == 0)
-    return NULL;
-
+  {
+    fputs("\x1b[H\x1b[JFtell failed..\n", stderr);
+    goto fail;
+  }
   fseek(fb->file_pointer, 0L, SEEK_SET);
 
   if ((fb->buffer = malloc(fb->size)) == NULL)

@@ -1,0 +1,20 @@
+
+Testing for "<contribution name> #<pull request number>"
+
+1. <test name>:
+  * <purpose for the test>:
+    ...
+
+  * <description for the test>:
+    ...
+
+  * <results of the test>:
+    ...
+
+  * <fixtures made during test>:
+    ...
+
+2. <test_name>:
+  ...
+
+...

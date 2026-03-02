@@ -12,20 +12,18 @@ Anedext \- It's an editor for text.
 
 The Anedext text editor is an editor for text, orignally written by Calm1403.
 
-You've two modes, normal and insert; insert is
-similar to Vim's replace mode, allowing a use
-r to overwrite a file's contents, in addition
-to resizing the file if the user wishes to enter
-more than what's already there.
+You've two modes, normal and insert; insert is similar to Vim's replace mode, allowing a user to overwrite a file's contents, in addition to resizing the file if the user wishes to enter
+more than what's already there. Normal mode is the default mode; to switch to insert, you press the key sequence CTRL+i, and to exit insert, you press ESC.
 
-Normal mode is also very similar to Vim's, in
-that it's used primarly for navigation; to move
-right, you press 'l,' with left, you press 'h.'
+ESC is also the key you press to exit the editor.
+
+Normal mode is also very similar to Vim's, in that it's used primarly for navigation; to move right, you press 'l,' with left, you press 'h.'
+
+You can also save your file editing by pressing the key sequence CTRL+S.
 
 .SH OPTIONS
 
-There aren't any options per-se; you supply a file name as an argument to the
-program on execution.
+There aren't any options per-se; you supply a file name as an argument to the program on execution.
 
 .SH SEE ALSO
 

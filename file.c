@@ -10,9 +10,7 @@ create_fb(char* location)
   if ((fb = malloc(sizeof *fb)) == NULL)
     return NULL;
 
-  *fb = (file_buffer_t){
-    .file_name = location, .file_pointer = NULL, .buffer = NULL, 0
-  };
+  *fb = (file_buffer_t){ location, NULL, NULL, 0 };
 
   if ((fb->file_pointer = fopen(fb->file_name, "r+")) == NULL)
   {

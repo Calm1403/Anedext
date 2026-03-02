@@ -12,7 +12,7 @@ create_fb(char* location)
   fb->file_name = location;
   if ((fb->file_pointer = fopen(fb->file_name, "r+")) == NULL)
   {
-    perror("\x1b[H\x1b[JFopen failure");
+    perror("\x1b[H\x1b[JFopen failure..\n\nReason");
     free(fb);
     return NULL;
   }
@@ -24,13 +24,23 @@ create_fb(char* location)
 
   if ((fb->buffer = malloc(fb->size)) == NULL)
   {
+    fputs("\x1b[H\x1b[JMalloc failed..\n", stderr);
     fclose(fb->file_pointer);
     free(fb);
     return NULL;
   }
 
   fb->buffer[fb->size - 1] = '\0';
-  fread(fb->buffer, 1, fb->size, fb->file_pointer);
+
+  size_t ret = fread(fb->buffer, 1, fb->size - 1, fb->file_pointer);
+  if (ret != fb->size - 1)
+  {
+    fputs("\x1b[H\x1b[JFread failed..\n", stderr);
+    fclose(fb->file_pointer);
+    free(fb);
+    return NULL;
+  }
+
   return fb;
 }
 
@@ -45,7 +55,7 @@ save_fb(file_buffer_t* fb)
   }
 
   // We subtract one, because we don't want to save the null byte.
-  if (fwrite(fb->buffer, fb->size - 1, 1, fb->file_pointer) == -1)
+  if (fwrite(fb->buffer, fb->size - 1, 1, fb->file_pointer) == 0)
   {
     perror("\x1b[H\x1b[JFwrite failed");
     return 1;
@@ -59,8 +69,8 @@ deallocate_fb(file_buffer_t* fb)
 {
   free(fb->buffer);
 
-  //  FIX : This is cause for concern when save_fb fails.
-  fclose(fb->file_pointer);
+  if (fb->file_pointer != NULL)
+    fclose(fb->file_pointer);
 
   free(fb);
 }

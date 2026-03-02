@@ -24,8 +24,8 @@ refactoring this code.
 
 # Convention
 I'm not the best at this, but in terms of convention I try
-to adhere to the C header file guidelines written by David
+to adhere to the [C header file guidelines][1] written by David
 Kieras for the university of Michigan; they seem reasonable
 enough to this day.
 
-https://websites.umich.edu/~eecs381/handouts/CHeaderFileGuidelines.pdf
+[1]: https://websites.umich.edu/~eecs381/handouts/CHeaderFileGuidelines.pdf

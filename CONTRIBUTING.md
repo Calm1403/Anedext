@@ -1,6 +1,6 @@
 # Contributions
 If you want to upload pull requests and contribute to Anedext, ensure that your contributions
-have their reasoning and implementation explained.
+have reasoning and their implementation explained.
 
 For software contributions, testing should be performed, in addition to the explanation of the contribution, to validate functionality; evidence 
 of testing is required, and may be presented in the pull request itself in the form of an addition to the project 

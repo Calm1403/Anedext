@@ -4,8 +4,9 @@ have their reasoning and implementation explained.
 
 For software contributions, testing should be performed, in addition to the explanation of the contribution, to validate functionality; evidence 
 of testing is required, and may be presented in the pull request itself in the form of an addition to the project 
-root's 'Tests' directory with documentation of the tests performed, or by directly messaging me about it. Testing 
-should involve some means of logic and memory validation, in addition to a given explanation and purpose of the test.
+root's 'Tests' directory with documentation of the tests performed, or by directly messaging me about it. 
+
+Testing should involve some means of logic and memory validation, in addition to a given explanation and purpose of the test.
 
 The test format my vary, but it should take the form of a written logical sequence of ordered steps taken to test the 
 contributions; an example of the structure may be found in the [Tests directory][3]. Note that a 'description' is what

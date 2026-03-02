@@ -2,7 +2,7 @@
 If you want to upload pull requests and contribute to Anedext, ensure that your contributions
 have their reasoning and implementation explained.
 
-Testing should be performed, in addition to the explanation of the contribution, to validate functionality; evidence 
+For software contributions, testing should be performed, in addition to the explanation of the contribution, to validate functionality; evidence 
 of testing is required, and may be presented in the pull request itself in the form of an addition to the project 
 root's 'Tests' directory with documentation of the tests performed, or by directly messaging me about it. Testing 
 should involve some means of logic and memory validation, in addition to a given explanation and purpose of the test.

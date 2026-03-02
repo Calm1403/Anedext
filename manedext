@@ -19,7 +19,7 @@ ESC is also the key you press to exit the editor.
 
 Normal mode is also very similar to Vim's, in that it's used primarly for navigation; to move right, you press 'l,' with left, you press 'h.'
 
-You can also save your file editing by pressing the key sequence CTRL+S.
+You can also save your file editing by pressing the key sequence CTRL+s.
 
 .SH OPTIONS
 

@@ -44,23 +44,25 @@ create_fb(char* location)
   return fb;
 }
 
+#define save_failure(prompt)                                                   \
+  {                                                                            \
+    perror(prompt);                                                            \
+    return 1;                                                                  \
+  }
+
 int
 save_fb(file_buffer_t* fb)
 {
   fb->file_pointer = freopen(fb->file_name, "w", fb->file_pointer);
   if (fb->file_pointer == NULL)
-  {
-    perror("\x1b[H\x1b[JSave failed..\n\nReason");
-    return 1;
-  }
+    save_failure("\x1b[H\x1b[JSave failed..\n\nReason");
 
   if (fwrite(fb->buffer, fb->size - 1, 1, fb->file_pointer) == 0)
   {
     if (errno == 0)
       return 0;
 
-    perror("\x1b[H\x1b[JSave failed..\n\nReason");
-    return 1;
+    save_failure("\x1b[H\x1b[JSave failed..\n\nReason");
   }
 
   return 0;

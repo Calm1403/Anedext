@@ -18,14 +18,17 @@ Currently, it only runs on Linux; compiled initially on
 Arch Linux, kernel 6.18.7.
 
 There are numerous problems with this code base; it's horribly
-naive and I don't think I'm implementing the Linux I/o
-interface safely at the minute; I'm going to be continually
-refactoring this code.
+naive, but I'm going to be continually refactoring this code.
 
 # Convention
 I'm not the best at this, but in terms of convention I try
 to adhere to the [C header file guidelines][1] written by David
 Kieras for the university of Michigan; they seem reasonable
 enough to this day.
+
+# Compilation
+If you're interested in playing around with Anedext, you can compile
+the program by simply running 'make' in the root directory where the
+makefile is located..
 
 [1]: https://websites.umich.edu/~eecs381/handouts/CHeaderFileGuidelines.pdf

@@ -1,14 +1,22 @@
 
+OBJDR = Build
 FILES = main.o file.o input.o process.o mappings.o
+OBJS = $(addprefix $(OBJDR)/, $(FILES))
 
-anedext: $(FILES)
-	cc $^ -o anedext
+./Build/anedext: $(OBJS)
+	cc $^ -o $(OBJDR)/anedext
 
-$(FILES): %.o: %.c
+./Build/%.o: ./Src/%.c
 	cc -c $< -o $@
 
 clean:
-	rm *.o anedext
+	rm Build/*.o Build/anedext
 
 clear:
-	rm *.o
+	rm Build/*.o
+
+$(OBJS) : | $(OBJDR)
+
+$(OBJDR):
+	mkdir Build
+

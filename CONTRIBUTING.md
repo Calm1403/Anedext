@@ -10,18 +10,11 @@ root's 'Test' directory with documentation of the unit tests performed using the
 
 Testing should involve some means of logic and memory validation, in addition to a given explanation and purpose of the test.
 
-<<<<<<< HEAD
 The test format my vary, but it should take the form of a written logical sequence of ordered steps taken to test the
 contributions; an example of the written test documentation structure may be found in the [Tests directory][3]. Note that a 'description' is what
 you did to do the test, with the 'purpose' being the reasoning for doing it. If you don't upload any testing, I won't
 merge the request. The documentation may be written in a multi lined comment in the unit test file validating the logic
 of your contribution.
-=======
-The test format my vary, but it should take the form of a written logical sequence of ordered steps taken to test the 
-contributions (I'll implement a test library at some point); an example of the structure may be found in the
-[Tests directory][3]. Note that a 'description' is what you did to do the test, with the 'purpose' being the reasoning for
-doing it. If you don't upload any testing, I won't merge the request.
->>>>>>> ad0e5255fd7ac70755cd81e0e9d60aaf2724367c
 
 In my mind, to keep the project size small, I should remove tests from the test directory after a merge; I'm stuck between
 whether or not I should keep the tests, because they may be helpful, but I'll see how it goes, so for now, upload tests to

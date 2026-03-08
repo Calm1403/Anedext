@@ -6,21 +6,16 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
-// Print state.
-#define print_state                                                            \
-  printf("\x1b[H\x1b[J%s\n[Pos: %li | Mode: %s | Size: %li]\n",                \
-         state.fb->buffer,                                                     \
-         state.pos,                                                            \
-         modes[state.mode],                                                    \
-         state.fb->size);
-
-// Return and print state.
+// Return and print screen.
 #define retaps(code)                                                           \
   do                                                                           \
   {                                                                            \
-    print_state;                                                               \
+    if (display() == 1)                                                        \
+      return 1;                                                                \
+                                                                               \
     return code;                                                               \
   } while (0)
 
@@ -32,14 +27,20 @@
     return code;                                                               \
   } while (0)
 
-#define BUF_SCALE 10
+// Return and print error.
+#define retape(prompt)                                                         \
+  do                                                                           \
+  {                                                                            \
+    perror(prompt);                                                            \
+    return 1;                                                                  \
+  } while (0)
 
 static struct state_s
 {
-  int mode;
-  size_t pos;
-  node_t* key_maps;
   file_buffer_t* fb;
+  node_t* key_maps;
+  size_t pos;
+  int mode;
 } state;
 
 enum
@@ -51,8 +52,59 @@ enum
 
 static char* modes[2] = { "normal", "insert" };
 
+/*
+  This is my vision for scrolling.
+
+  +---File.txt--------------------+
+  |Stuff     (what they can't see)|
+  |_______________________________| Window Start.
+  |User window (what they can see)| User's file/buffer pos is somewhere here..
+  |-------------------------------| Window End (= terminal height).
+  |Stuff     (what they can't see)|
+  +-------------------------------+
+*/
+
+static int
+display(void)
+{
+  struct winsize ws;
+
+  if ((ioctl(0, TIOCGWINSZ, &ws)) == -1)
+    retape("\x1b[H\x1b[JCouldn't determine terminal size..\n\nReason");
+
+  // This is heinous.. aye; I'll change this into a nicer window system later,
+  // it displays how my intension with the layout will look.
+  printf("\x1b[H\x1b[J\x1b[0;%iHPos: %li | Mode: %s | Size: %li\n%s\n",
+         (int)(ws.ws_col * 0.5F) + ((float)(int)(ws.ws_col * 0.0F) > 0.5F) - 15,
+         state.pos,
+         modes[state.mode],
+         state.fb->size,
+         state.fb->buffer);
+
+  return 0;
+}
+
+static int
+increase_buffer(void)
+{
+  // State.fb->size - 2 is the last non null character.
+  if (state.fb->size == 1 || state.pos == state.fb->size - 2)
+  { // Ten is just the default rescale size.
+    state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
+    if (state.fb->buffer == NULL)
+      return 1;
+
+    // Memset the rest of the buffer because of crap contents.
+    memset(&state.fb->buffer[state.pos], ' ', state.fb->size - state.pos);
+
+    state.fb->buffer[state.fb->size - 1] = '\0';
+  }
+
+  return 0;
+}
+
 static void
-go_left()
+go_left(void)
 {
   if ((state.pos - 1) == -1)
     state.pos = state.fb->size - 2;
@@ -61,7 +113,7 @@ go_left()
 }
 
 static void
-go_right()
+go_right(void)
 {
   if ((state.pos + 1) > (state.fb->size - 2))
     state.pos = 0;
@@ -111,7 +163,7 @@ static int
 handle_0x13(void)
 {
   if (save_fb(state.fb) == 1)
-    retapp(1, "Couldn't save the file buffer..\n", stderr);
+    return 1;
 
   fputs("\a", stdout);
 
@@ -144,32 +196,13 @@ handle_0x7f(void)
 }
 
 static int
-scale_buffer(void)
-{
-  // State.fb->size - 2 is the last non null character.
-  if (state.fb->size == 1 || state.pos == state.fb->size - 2)
-  {
-    state.fb->buffer = realloc(state.fb->buffer, state.fb->size += BUF_SCALE);
-    if (state.fb->buffer == NULL)
-      return 1;
-
-    // Memset the rest of the buffer because of crap contents.
-    memset(&state.fb->buffer[state.pos], ' ', state.fb->size - state.pos);
-
-    state.fb->buffer[state.fb->size - 1] = '\0';
-  }
-
-  return 0;
-}
-
-static int
 handle_normal(unsigned char input)
 {
   if (state.mode == 0)
     retaps(0);
 
-  if (scale_buffer() == 1)
-    retapp(1, "\x1b[h\x1b[jrealloc failed..\n", stderr);
+  if (increase_buffer() == 1)
+    retape("\x1b[h\x1b[jRealloc failed..\n\nReason");
 
   state.fb->buffer[state.pos] = input;
   go_right();
@@ -183,8 +216,8 @@ handle_0x0d(void)
   if (state.mode == 0)
     retaps(0);
 
-  if (scale_buffer() == 1)
-    retapp(1, "\x1b[h\x1b[jrealloc failed..\n", stderr);
+  if (increase_buffer() == 1)
+    retape("\x1b[h\x1b[jRealloc failed..\n\nReason");
 
   state.fb->buffer[state.pos] = '\n';
   go_right();
@@ -271,7 +304,8 @@ process_input(unsigned char input)
 static int
 state_initialise(char* location)
 {
-  state = (struct state_s){ 0, 0, NULL, NULL };
+  state = (struct state_s){ NULL, NULL, 0, 0 };
+
   if ((state.fb = create_fb(location)) == NULL)
     return 1;
 
@@ -295,7 +329,8 @@ initialisation(char* location)
   if (state_initialise(location) == 1)
     return 1;
 
-  print_state;
+  display();
+
   if (read_input(&process_input) == 1)
     goto fail;
 

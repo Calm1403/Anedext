@@ -4,10 +4,10 @@ FILES = main.o file.o input.o process.o mappings.o
 OBJS = $(addprefix $(OBJDR)/, $(FILES))
 
 ./Build/anedext: $(OBJS)
-	cc $^ -o $(OBJDR)/anedext
+	cc -Wall -Werror $^ -o $(OBJDR)/anedext
 
 ./Build/%.o: ./Src/%.c
-	cc -c $< -o $@
+	cc -Wall -Werror -c $< -o $@
 
 clean:
 	rm Build/*.o Build/anedext

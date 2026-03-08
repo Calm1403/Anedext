@@ -29,6 +29,6 @@ enough to this day.
 # Compilation
 If you're interested in playing around with Anedext, you can compile
 the program by simply running 'make' in the root directory where the
-makefile is located..
+makefile is located.
 
 [1]: https://websites.umich.edu/~eecs381/handouts/CHeaderFileGuidelines.pdf

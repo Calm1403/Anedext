@@ -10,7 +10,7 @@ OBJS = $(addprefix $(OBJDR)/, $(FILES))
 	cc -Wall -Werror -c $< -o $@
 
 clean:
-	rm Build/*.o Build/anedext
+	rm -r Build
 
 clear:
 	rm Build/*.o

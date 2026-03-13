@@ -17,13 +17,19 @@
     return code;                                                               \
   } while (0)
 
+#define print_state                                                            \
+  printf("\x1b[H\x1b[J\x1b[%i;0HPos: %li | Mode: %s | Size: %li\x1b[H%s\n",    \
+         editor.ws.row,                                                        \
+         editor.pos,                                                           \
+         modes[editor.mode],                                                   \
+         editor.fb->size,                                                      \
+         editor.fb->buffer)
+
 // Return and print screen.
-#define retapscn(code)                                                         \
+#define retaps(code)                                                           \
   do                                                                           \
   {                                                                            \
-    if (display() == 1)                                                        \
-      ret(1);                                                                  \
-                                                                               \
+    print_state;                                                               \
     ret(code);                                                                 \
   } while (0)
 
@@ -48,7 +54,11 @@ static struct editor_s
   file_buffer_t* fb;
   node_t* key_maps;
   size_t pos;
-  int poll;
+  struct ws_s
+  {
+    int row;
+    int col;
+  } ws;
   int mode;
 } editor;
 
@@ -62,27 +72,10 @@ enum
 static char* modes[2] = { "normal", "insert" };
 
 static int
-gettsze(struct winsize* ws)
+get_size(struct winsize* ws)
 {
   if ((ioctl(0, TIOCGWINSZ, ws)) == -1)
     retape(1, "\x1b[H\x1b[JCouldn't determine terminal size..\n\nReason");
-
-  ret(0);
-}
-
-static int
-display(void)
-{
-  struct winsize ws;
-  if (gettsze(&ws) == 1)
-    ret(1);
-
-  printf("\x1b[H%s\n\x1b[H\x1b[J\x1b[%i;0HPos: %li | Mode: %s | Size: %li",
-         editor.fb->buffer,
-         ws.ws_row,
-         editor.pos,
-         modes[editor.mode],
-         editor.fb->size);
 
   ret(0);
 }
@@ -130,7 +123,7 @@ handle_h(void)
     ret(0);
 
   go_left();
-  retapscn(0);
+  retaps(0);
 }
 
 static int
@@ -140,7 +133,7 @@ handle_l(void)
     ret(0);
 
   go_right();
-  retapscn(0);
+  retaps(0);
 }
 
 static int
@@ -149,7 +142,7 @@ handle_0x1b(void)
   if (editor.mode == 1)
   {
     editor.mode = 0;
-    retapscn(0);
+    retaps(0);
   }
   retapp(1, "\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
 }
@@ -158,7 +151,7 @@ static int
 handle_0x09(void)
 {
   editor.mode = 1;
-  retapscn(0);
+  retaps(0);
 }
 
 static int
@@ -169,7 +162,7 @@ handle_0x13(void)
 
   fputs("\a", stdout);
 
-  retapscn(0);
+  retaps(0);
 }
 
 static int
@@ -192,7 +185,7 @@ handle_0x7f(void)
     if (editor.pos == editor.fb->size - 1)
       editor.pos -= 1;
   }
-  retapscn(0);
+  retaps(0);
 }
 
 static int
@@ -207,7 +200,7 @@ handle_normal(unsigned char input)
   editor.fb->buffer[editor.pos] = input;
   go_right();
 
-  retapscn(0);
+  retaps(0);
 }
 
 static int
@@ -222,7 +215,7 @@ handle_0x0d(void)
   editor.fb->buffer[editor.pos] = '\n';
   go_right();
 
-  retapscn(0);
+  retaps(0);
 }
 
 static node_t*
@@ -304,14 +297,19 @@ process_input(unsigned char input)
 static int
 editor_initialise(char* location)
 {
-  if ((editor.fb = create_fb(location)) == NULL)
-    ret(1);
+  editor = (struct editor_s){ 0 };
 
-  if (display() == 1)
+  if ((editor.fb = create_fb(location)) == NULL)
     ret(1);
 
   if ((editor.key_maps = register_maps()) == NULL)
     ret(1);
+
+  struct winsize ws;
+  if (get_size(&ws) == 1)
+    ret(1);
+
+  editor.ws = (struct ws_s){ .col = ws.ws_col, .row = ws.ws_row };
 
   ret(0);
 }
@@ -330,30 +328,29 @@ initialisation(char* location)
   if (editor_initialise(location) == 1)
     ret(1);
 
-  display();
+  print_state;
 
   if (read_input(&process_input) == 1)
-    goto fail;
+  {
+    editor_uninitialise();
+    ret(1);
+  }
 
   editor_uninitialise();
   ret(0);
-
-fail:
-  editor_uninitialise();
-  ret(1);
 }
 
 int
 begin_processing(char* location)
 {
   fputs("\x1b[?25l", stdout);
+
   if (initialisation(location) == 1)
-    goto fail;
+  {
+    fputs("\x1b[?25h", stdout);
+    ret(1);
+  }
 
   fputs("\x1b[?25h", stdout);
   ret(0);
-
-fail:
-  fputs("\x1b[?25h", stdout);
-  ret(1);
 }

@@ -4,19 +4,27 @@
 #include "input.h"
 #include "mappings.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+// Return; makes the syntax consistent.
+#define ret(code)                                                              \
+  do                                                                           \
+  {                                                                            \
+    return code;                                                               \
+  } while (0)
+
 // Return and print screen.
-#define retaps(code)                                                           \
+#define retapscn(code)                                                         \
   do                                                                           \
   {                                                                            \
     if (display() == 1)                                                        \
-      return 1;                                                                \
+      ret(1);                                                                  \
                                                                                \
-    return code;                                                               \
+    ret(code);                                                                 \
   } while (0)
 
 // Return and print prompt.
@@ -24,24 +32,25 @@
   do                                                                           \
   {                                                                            \
     fputs(prompt, stream);                                                     \
-    return code;                                                               \
+    ret(code);                                                                 \
   } while (0)
 
 // Return and print error.
-#define retape(prompt)                                                         \
+#define retape(code, prompt)                                                   \
   do                                                                           \
   {                                                                            \
     perror(prompt);                                                            \
-    return 1;                                                                  \
+    ret(code);                                                                 \
   } while (0)
 
-static struct state_s
+static struct editor_s
 {
   file_buffer_t* fb;
   node_t* key_maps;
   size_t pos;
+  int poll;
   int mode;
-} state;
+} editor;
 
 enum
 {
@@ -52,102 +61,95 @@ enum
 
 static char* modes[2] = { "normal", "insert" };
 
-/*
-  This is my vision for scrolling.
+static int
+gettsze(struct winsize* ws)
+{
+  if ((ioctl(0, TIOCGWINSZ, ws)) == -1)
+    retape(1, "\x1b[H\x1b[JCouldn't determine terminal size..\n\nReason");
 
-  +---File.txt--------------------+
-  |Stuff     (what they can't see)|
-  |_______________________________| Window Start.
-  |User window (what they can see)| User's file/buffer pos is somewhere here..
-  |-------------------------------| Window End (= terminal height).
-  |Stuff     (what they can't see)|
-  +-------------------------------+
-*/
+  ret(0);
+}
 
 static int
 display(void)
 {
   struct winsize ws;
+  if (gettsze(&ws) == 1)
+    ret(1);
 
-  if ((ioctl(0, TIOCGWINSZ, &ws)) == -1)
-    retape("\x1b[H\x1b[JCouldn't determine terminal size..\n\nReason");
+  printf("\x1b[H%s\n\x1b[H\x1b[J\x1b[%i;0HPos: %li | Mode: %s | Size: %li",
+         editor.fb->buffer,
+         ws.ws_row,
+         editor.pos,
+         modes[editor.mode],
+         editor.fb->size);
 
-  // This is heinous.. aye; I'll change this into a nicer window system later,
-  // it displays how my intension with the layout will look.
-  printf("\x1b[H\x1b[J\x1b[0;%iHPos: %li | Mode: %s | Size: %li\n%s\n",
-         (int)(ws.ws_col * 0.5F) + ((float)(int)(ws.ws_col * 0.0F) > 0.5F) - 15,
-         state.pos,
-         modes[state.mode],
-         state.fb->size,
-         state.fb->buffer);
-
-  return 0;
+  ret(0);
 }
 
 static int
 increase_buffer(void)
 {
-  // State.fb->size - 2 is the last non null character.
-  if (state.fb->size == 1 || state.pos == state.fb->size - 2)
+  // editor.fb->size - 2 is the last non null character.
+  if (editor.fb->size == 1 || editor.pos == editor.fb->size - 2)
   { // Ten is just the default rescale size.
-    state.fb->buffer = realloc(state.fb->buffer, state.fb->size += 10);
-    if (state.fb->buffer == NULL)
-      return 1;
+    editor.fb->buffer = realloc(editor.fb->buffer, editor.fb->size += 10);
+    if (editor.fb->buffer == NULL)
+      retape(1, "\x1b[h\x1b[jRealloc failed..\n\nReason");
 
     // Memset the rest of the buffer because of crap contents.
-    memset(&state.fb->buffer[state.pos], ' ', state.fb->size - state.pos);
+    memset(&editor.fb->buffer[editor.pos], ' ', editor.fb->size - editor.pos);
 
-    state.fb->buffer[state.fb->size - 1] = '\0';
+    editor.fb->buffer[editor.fb->size - 1] = '\0';
   }
-
-  return 0;
+  ret(0);
 }
 
 static void
 go_left(void)
 {
-  if ((state.pos - 1) == -1)
-    state.pos = state.fb->size - 2;
+  if ((editor.pos - 1) == -1)
+    editor.pos = editor.fb->size - 2;
   else
-    --state.pos;
+    --editor.pos;
 }
 
 static void
 go_right(void)
 {
-  if ((state.pos + 1) > (state.fb->size - 2))
-    state.pos = 0;
+  if ((editor.pos + 1) > (editor.fb->size - 2))
+    editor.pos = 0;
   else
-    ++state.pos;
+    ++editor.pos;
 }
 
 static int
 handle_h(void)
 { // This ensures that a user can't move about freely when the size is one.
-  if (state.fb->size == 1)
-    retaps(0);
+  if (editor.fb->size == 1)
+    ret(0);
 
   go_left();
-  retaps(0);
+  retapscn(0);
 }
 
 static int
 handle_l(void)
 { // This ensures that a user can't move about freely when the size is one.
-  if (state.fb->size == 1)
-    retaps(0);
+  if (editor.fb->size == 1)
+    ret(0);
 
   go_right();
-  retaps(0);
+  retapscn(0);
 }
 
 static int
 handle_0x1b(void)
 {
-  if (state.mode == 1)
+  if (editor.mode == 1)
   {
-    state.mode = 0;
-    retaps(0);
+    editor.mode = 0;
+    retapscn(0);
   }
   retapp(1, "\x1b[H\x1b[JExiting.. bye bye!\n", stdout);
 }
@@ -155,133 +157,131 @@ handle_0x1b(void)
 static int
 handle_0x09(void)
 {
-  state.mode = 1;
-  retaps(0);
+  editor.mode = 1;
+  retapscn(0);
 }
 
 static int
 handle_0x13(void)
 {
-  if (save_fb(state.fb) == 1)
-    return 1;
+  if (save_fb(editor.fb) == 1)
+    ret(1);
 
   fputs("\a", stdout);
 
-  retaps(0);
+  retapscn(0);
 }
 
 static int
 handle_0x7f(void)
 {
-  if (state.mode == 0 || state.fb->size == 1)
-    retaps(0);
+  if (editor.mode == 0 || editor.fb->size == 1)
+    ret(0);
 
   go_left();
+  for (size_t i = editor.pos; i + 1 < editor.fb->size; ++i)
+    editor.fb->buffer[i] = editor.fb->buffer[i + 1];
 
-  for (size_t i = state.pos; i + 1 < state.fb->size; ++i)
-    state.fb->buffer[i] = state.fb->buffer[i + 1];
-
-  state.fb->buffer = realloc(state.fb->buffer, state.fb->size -= 1);
-  if (state.fb->buffer == NULL)
+  editor.fb->buffer = realloc(editor.fb->buffer, editor.fb->size -= 1);
+  if (editor.fb->buffer == NULL)
     retapp(1, "\x1b[H\x1b[JRealloc failed..\n", stderr);
 
   // Weird bug fix; user could remove null byte.
-  if (state.pos != 0)
+  if (editor.pos != 0)
   {
-    if (state.pos == state.fb->size - 1)
-      state.pos -= 1;
+    if (editor.pos == editor.fb->size - 1)
+      editor.pos -= 1;
   }
-
-  retaps(0);
+  retapscn(0);
 }
 
 static int
 handle_normal(unsigned char input)
 {
-  if (state.mode == 0)
-    retaps(0);
+  if (editor.mode == 0)
+    ret(0);
 
   if (increase_buffer() == 1)
-    retape("\x1b[h\x1b[jRealloc failed..\n\nReason");
+    ret(1);
 
-  state.fb->buffer[state.pos] = input;
+  editor.fb->buffer[editor.pos] = input;
   go_right();
 
-  retaps(0);
+  retapscn(0);
 }
 
 static int
 handle_0x0d(void)
 {
-  if (state.mode == 0)
-    retaps(0);
+  if (editor.mode == 0)
+    ret(0);
 
   if (increase_buffer() == 1)
-    retape("\x1b[h\x1b[jRealloc failed..\n\nReason");
+    ret(1);
 
-  state.fb->buffer[state.pos] = '\n';
+  editor.fb->buffer[editor.pos] = '\n';
   go_right();
 
-  retaps(0);
+  retapscn(0);
 }
 
 static node_t*
 register_maps(void)
 {
-  if (add_node(&state.key_maps, handle_0x1b, 0x1b) == NULL)
+  if (add_node(&editor.key_maps, handle_0x1b, 0x1b) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x09, 0x09) == NULL)
+  if (add_node(&editor.key_maps, handle_0x09, 0x09) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x7f, 0x7f) == NULL)
+  if (add_node(&editor.key_maps, handle_0x7f, 0x7f) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x13, 0x13) == NULL)
+  if (add_node(&editor.key_maps, handle_0x13, 0x13) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_0x0d, 0x0d) == NULL)
+  if (add_node(&editor.key_maps, handle_0x0d, 0x0d) == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_h, 'h') == NULL)
+  if (add_node(&editor.key_maps, handle_h, 'h') == NULL)
     goto free;
 
-  if (add_node(&state.key_maps, handle_l, 'l') == NULL)
+  if (add_node(&editor.key_maps, handle_l, 'l') == NULL)
     goto free;
 
-  return state.key_maps; // If everything went well..
+  ret(editor.key_maps); // If everything went well..
 
 free:
-  free_list(state.key_maps);
-  return NULL;
+  free_list(editor.key_maps);
+  ret(NULL);
 }
 
 static int
 check_maps(unsigned char input)
 {
-  node_t* node = state.key_maps;
+  node_t* node = editor.key_maps;
   do
   {
     if (node->key == input)
     {
-      if (state.mode == 1)
+      if (editor.mode == 1)
       { //  TODO : Generalise this; not through maps.
         if ('a' < node->key && node->key < 'z')
-          return NORMAL;
+          ret(NORMAL);
 
         if ('A' < node->key && node->key < 'Z')
-          return NORMAL;
+          ret(NORMAL);
       }
 
       if (node->mapping() == 1)
-        return SPECIAL_T;
+        ret(SPECIAL_T);
     }
   } while (node->key != input && (node = node->next) != NULL);
 
   if (node == NULL)
-    return NORMAL;
+    ret(NORMAL);
 
-  return SPECIAL_NT;
+  ret(SPECIAL_NT);
 }
 
 static int
@@ -290,56 +290,57 @@ process_input(unsigned char input)
   switch (check_maps(input))
   {
     case SPECIAL_T:
-      return 1;
+      ret(1);
 
     case SPECIAL_NT:
-      return 0;
+      ret(0);
 
     case NORMAL:
-      return handle_normal(input);
+      ret(handle_normal(input));
   }
-  return 0;
+  ret(0);
 }
 
 static int
-state_initialise(char* location)
+editor_initialise(char* location)
 {
-  state = (struct state_s){ NULL, NULL, 0, 0 };
+  if ((editor.fb = create_fb(location)) == NULL)
+    ret(1);
 
-  if ((state.fb = create_fb(location)) == NULL)
-    return 1;
+  if (display() == 1)
+    ret(1);
 
-  if ((state.key_maps = register_maps()) == NULL)
-    return 1;
+  if ((editor.key_maps = register_maps()) == NULL)
+    ret(1);
 
-  return 0;
+  ret(0);
 }
 
 static void
-state_uninitialise(void)
+editor_uninitialise(void)
 {
-  free_list(state.key_maps);
+  free_list(editor.key_maps);
 
-  deallocate_fb(state.fb);
+  deallocate_fb(editor.fb);
 }
 
 static int
 initialisation(char* location)
 {
-  if (state_initialise(location) == 1)
-    return 1;
+  if (editor_initialise(location) == 1)
+    ret(1);
 
   display();
 
   if (read_input(&process_input) == 1)
     goto fail;
 
-  state_uninitialise();
-  return 0;
+  editor_uninitialise();
+  ret(0);
 
 fail:
-  state_uninitialise();
-  return 1;
+  editor_uninitialise();
+  ret(1);
 }
 
 int
@@ -350,9 +351,9 @@ begin_processing(char* location)
     goto fail;
 
   fputs("\x1b[?25h", stdout);
-  return 0;
+  ret(0);
 
 fail:
   fputs("\x1b[?25h", stdout);
-  return 1;
+  ret(1);
 }

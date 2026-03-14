@@ -2,6 +2,8 @@
 #ifndef RETS_H
 #define RETS_H
 
+#include <stdio.h>
+
 // Return; makes the syntax consistent.
 #define ret(code)                                                              \
   do                                                                           \

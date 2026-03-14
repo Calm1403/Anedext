@@ -11,15 +11,18 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+// Print state.
 #define print_state                                                            \
-  printf("\x1b[H\x1b[J\x1b[%i;0HPos: %li | Mode: %s | Size: %li\x1b[H%s\n",    \
+  printf("\x1b[H\x1b[J\x1b[%i;0HPos: %li | Mode: %s | Size: %li | Poll: "      \
+         "%i\x1b[H%s\n",                                                       \
          editor.ws.ws_row,                                                     \
          editor.pos,                                                           \
          modes[editor.mode],                                                   \
          editor.fb->size,                                                      \
+         editor.poll,                                                          \
          editor.fb->buffer)
 
-// Return and print screen.
+// Return and print state.
 #define retaps(code)                                                           \
   do                                                                           \
   {                                                                            \
@@ -33,6 +36,7 @@ static struct editor_s
   file_buffer_t* fb;
   node_t* key_maps;
   size_t pos;
+  int poll;
   int mode;
 } editor;
 
@@ -44,6 +48,17 @@ enum
 };
 
 static char* modes[2] = { "normal", "insert" };
+
+/*
+   TODO :
+
+  static int
+  display(void)
+  {
+    ... code for windowing.
+    ret(1);
+  }
+*/
 
 static int
 increase_buffer(void)
@@ -83,7 +98,7 @@ go_right(void)
 
 static int
 handle_h(void)
-{ // This ensures that a user can't move about freely when the size is one.
+{ // This ensures that a user can't move about freely when size = 1.
   if (editor.fb->size == 1)
     ret(0);
 
@@ -93,7 +108,7 @@ handle_h(void)
 
 static int
 handle_l(void)
-{ // This ensures that a user can't move about freely when the size is one.
+{ // This ensures that a user can't move about freely when size = 1.
   if (editor.fb->size == 1)
     ret(0);
 
@@ -153,34 +168,39 @@ handle_0x7f(void)
   retaps(0);
 }
 
+//  TODO : Change this; accomodate for newline input with sophistication.
+
+#define poll_cond                                                              \
+  ((editor.ws.ws_row - 1) * editor.ws.ws_col * (editor.poll + 1)) < editor.pos
+
+#define insert(input)                                                          \
+  do                                                                           \
+  {                                                                            \
+    if (editor.mode == 0)                                                      \
+      ret(0);                                                                  \
+                                                                               \
+    if (increase_buffer() == 1)                                                \
+      ret(1);                                                                  \
+                                                                               \
+    editor.fb->buffer[editor.pos] = input;                                     \
+    go_right();                                                                \
+                                                                               \
+    if (poll_cond)                                                             \
+      ++editor.poll;                                                           \
+                                                                               \
+    retaps(0);                                                                 \
+  } while (0)
+
 static int
 handle_normal(unsigned char input)
 {
-  if (editor.mode == 0)
-    ret(0);
-
-  if (increase_buffer() == 1)
-    ret(1);
-
-  editor.fb->buffer[editor.pos] = input;
-  go_right();
-
-  retaps(0);
+  insert(input);
 }
 
 static int
 handle_0x0d(void)
 {
-  if (editor.mode == 0)
-    ret(0);
-
-  if (increase_buffer() == 1)
-    ret(1);
-
-  editor.fb->buffer[editor.pos] = '\n';
-  go_right();
-
-  retaps(0);
+  insert('\n');
 }
 
 static node_t*
@@ -207,7 +227,7 @@ register_maps(void)
   if (add_node(&editor.key_maps, handle_l, 'l') == NULL)
     goto free;
 
-  ret(editor.key_maps); // If everything went well..
+  ret(editor.key_maps);
 
 free:
   free_list(editor.key_maps);

@@ -40,6 +40,13 @@ static struct editor_s
   int mode;
 } editor;
 
+/*
+ The poll is multiplied against the terminal area to get
+ the window index. The window is a segment of the
+ buffer that the user can see; the poll is a means
+ of getting particular segments.
+*/
+
 enum
 {
   SPECIAL_NT = 2, // Special input; non program terminating.

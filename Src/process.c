@@ -3,23 +3,17 @@
 #include "file.h"
 #include "input.h"
 #include "mappings.h"
+#include "rets.h"
+#include "window.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-// Return; makes the syntax consistent.
-#define ret(code)                                                              \
-  do                                                                           \
-  {                                                                            \
-    return code;                                                               \
-  } while (0)
-
 #define print_state                                                            \
   printf("\x1b[H\x1b[J\x1b[%i;0HPos: %li | Mode: %s | Size: %li\x1b[H%s\n",    \
-         editor.ws.row,                                                        \
+         editor.ws.ws_row,                                                     \
          editor.pos,                                                           \
          modes[editor.mode],                                                   \
          editor.fb->size,                                                      \
@@ -33,32 +27,12 @@
     ret(code);                                                                 \
   } while (0)
 
-// Return and print prompt.
-#define retapp(code, prompt, stream)                                           \
-  do                                                                           \
-  {                                                                            \
-    fputs(prompt, stream);                                                     \
-    ret(code);                                                                 \
-  } while (0)
-
-// Return and print error.
-#define retape(code, prompt)                                                   \
-  do                                                                           \
-  {                                                                            \
-    perror(prompt);                                                            \
-    ret(code);                                                                 \
-  } while (0)
-
 static struct editor_s
 {
+  struct winsize ws;
   file_buffer_t* fb;
   node_t* key_maps;
   size_t pos;
-  struct ws_s
-  {
-    int row;
-    int col;
-  } ws;
   int mode;
 } editor;
 
@@ -70,15 +44,6 @@ enum
 };
 
 static char* modes[2] = { "normal", "insert" };
-
-static int
-get_size(struct winsize* ws)
-{
-  if ((ioctl(0, TIOCGWINSZ, ws)) == -1)
-    retape(1, "\x1b[H\x1b[JCouldn't determine terminal size..\n\nReason");
-
-  ret(0);
-}
 
 static int
 increase_buffer(void)
@@ -305,11 +270,8 @@ editor_initialise(char* location)
   if ((editor.key_maps = register_maps()) == NULL)
     ret(1);
 
-  struct winsize ws;
-  if (get_size(&ws) == 1)
+  if (get_size(&editor.ws) == 1)
     ret(1);
-
-  editor.ws = (struct ws_s){ .col = ws.ws_col, .row = ws.ws_row };
 
   ret(0);
 }

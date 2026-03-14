@@ -1,4 +1,5 @@
 #include "file.h"
+#include "rets.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,7 +11,7 @@
       fclose(fb->file_pointer);                                                \
                                                                                \
     free(fb);                                                                  \
-    return NULL;                                                               \
+    ret(NULL);                                                                 \
   }
 
 file_buffer_t*
@@ -41,31 +42,25 @@ create_fb(char* location)
   if (fread(fb->buffer, 1, fb->size - 1, fb->file_pointer) != fb->size - 1)
     fb_failure("\x1b[H\x1b[JFread failed..\n\nReason");
 
-  return fb;
+  ret(fb);
 }
-
-#define save_failure(prompt)                                                   \
-  {                                                                            \
-    perror(prompt);                                                            \
-    return 1;                                                                  \
-  }
 
 int
 save_fb(file_buffer_t* fb)
 {
   fb->file_pointer = freopen(fb->file_name, "w", fb->file_pointer);
   if (fb->file_pointer == NULL)
-    save_failure("\x1b[H\x1b[JSave failed..\n\nReason");
+    retape(1, "\x1b[H\x1b[JSave failed..\n\nReason");
 
   if (fwrite(fb->buffer, fb->size - 1, 1, fb->file_pointer) == 0)
   {
     if (errno == 0)
-      return 0;
+      ret(0);
 
-    save_failure("\x1b[H\x1b[JSave failed..\n\nReason");
+    retape(1, "\x1b[H\x1b[JSave failed..\n\nReason");
   }
 
-  return 0;
+  ret(0);
 }
 
 void

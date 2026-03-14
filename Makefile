@@ -1,6 +1,6 @@
 
 OBJDR = Build
-FILES = main.o file.o input.o process.o mappings.o
+FILES = main.o file.o input.o process.o mappings.o window.o
 OBJS = $(addprefix $(OBJDR)/, $(FILES))
 
 ./Build/anedext: $(OBJS)
